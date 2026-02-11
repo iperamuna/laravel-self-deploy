@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.5.9] - 2026-02-12
+
+### Fixed
+- **Exit Code Detection**: Fixed a bug where `selfdeploy:run` incorrectly reported failure for systemd units due to misinterpretation of `exec()` return values.
+
 ## [v1.5.8] - 2026-02-12
 
 ### Changed
