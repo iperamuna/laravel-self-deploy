@@ -4,7 +4,6 @@ namespace Iperamuna\SelfDeploy\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
 
 class SelfDeploy extends Command
 {
@@ -45,14 +44,14 @@ class SelfDeploy extends Command
 
         $scriptsPath = config('self-deploy.deployment_scripts_path');
 
-        if (!$scriptsPath || !File::exists($scriptsPath)) {
+        if (! $scriptsPath || ! File::exists($scriptsPath)) {
             $this->error("Deployment scripts path not configured or does not exist: {$scriptsPath}");
 
             return Command::FAILURE;
         }
 
         $files = File::files($scriptsPath);
-        $shFiles = array_filter($files, fn($file) => $file->getExtension() === 'sh');
+        $shFiles = array_filter($files, fn ($file) => $file->getExtension() === 'sh');
 
         if (empty($shFiles)) {
             $this->info("No .sh files found in {$scriptsPath}");
@@ -60,9 +59,9 @@ class SelfDeploy extends Command
             return Command::SUCCESS;
         }
 
-        $this->info('Found ' . count($shFiles) . ' deployment script(s).');
+        $this->info('Found '.count($shFiles).' deployment script(s).');
 
-        if (!$this->option('force') && !$this->confirm('Do you wish to run all these deployment scripts?')) {
+        if (! $this->option('force') && ! $this->confirm('Do you wish to run all these deployment scripts?')) {
             $this->info('Operation cancelled.');
 
             return Command::SUCCESS;
@@ -78,16 +77,16 @@ class SelfDeploy extends Command
             $this->info("Triggering: {$scriptName}");
 
             if ($executionMode === 'systemd') {
-                $unitName = str($scriptName)->slug()->limit(30)->toString() . '-' . now()->format('Ymd-His');
+                $unitName = str($scriptName)->slug()->limit(30)->toString().'-'.now()->format('Ymd-His');
                 $systemd = config('self-deploy.systemd', []);
 
                 $command = [
                     'sudo', // systemd-run --unit typically requires root
                     '/usr/bin/systemd-run',
                     "--unit={$unitName}",
-                    '--property=Nice=' . ($systemd['nice'] ?? 10),
-                    '--property=IOSchedulingClass=' . ($systemd['io_scheduling_class'] ?? 'best-effort'),
-                    '--property=IOSchedulingPriority=' . ($systemd['io_scheduling_priority'] ?? 7),
+                    '--property=Nice='.($systemd['nice'] ?? 10),
+                    '--property=IOSchedulingClass='.($systemd['io_scheduling_class'] ?? 'best-effort'),
+                    '--property=IOSchedulingPriority='.($systemd['io_scheduling_priority'] ?? 7),
                 ];
 
                 if ($systemd['collect'] ?? true) {
@@ -109,7 +108,7 @@ class SelfDeploy extends Command
                     $this->line("  -> Monitor: <comment>journalctl -u {$unitName} -f</comment>");
                 } else {
                     $this->error("  -> <error>ERROR</error>: Failed to start systemd unit. Exit code: {$resultCode}");
-                    $this->line('     Command tried: ' . $cmdString);
+                    $this->line('     Command tried: '.$cmdString);
                 }
             } else {
                 // Classic shell background mode
@@ -120,7 +119,7 @@ class SelfDeploy extends Command
                     $scriptPath
                 );
 
-                if (!app()->runningUnitTests()) {
+                if (! app()->runningUnitTests()) {
                     exec($command);
                 }
 

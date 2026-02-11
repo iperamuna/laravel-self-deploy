@@ -4,6 +4,7 @@ namespace Iperamuna\SelfDeploy\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use Iperamuna\SelfDeploy\Support\ConfigFormatter;
 
 use function Laravel\Prompts\confirm;
@@ -40,7 +41,7 @@ class CreateDeploymentFile extends Command
         $configs = config('self-deploy.environments', []);
 
         // 1. Select or Add Environment
-        if (!$environment) {
+        if (! $environment) {
             $environmentOptions = array_keys($configs);
             $environmentOptions[] = '+ Add New Environment';
 
@@ -61,7 +62,7 @@ class CreateDeploymentFile extends Command
             }
         }
 
-        if (!isset($configs[$environment])) {
+        if (! isset($configs[$environment])) {
             $this->error("Environment [{$environment}] not found in config.");
 
             return Command::FAILURE;
@@ -70,7 +71,7 @@ class CreateDeploymentFile extends Command
         $deployments = $configs[$environment];
 
         // 2. Select or Add Deployment Name
-        if (!$deploymentName) {
+        if (! $deploymentName) {
             $deploymentOptions = array_keys($deployments);
             $deploymentOptions[] = '+ Add New Deployment Configuration';
 
@@ -87,8 +88,14 @@ class CreateDeploymentFile extends Command
                     required: true
                 );
             }
-        } elseif (!isset($deployments[$deploymentName])) {
+        } elseif (! isset($deployments[$deploymentName])) {
             $this->error("Deployment [{$deploymentName}] not found in environment [{$environment}].");
+
+            return Command::FAILURE;
+        }
+
+        if ($deploymentName === 'self_deploy_server_key') {
+            $this->error('Deployment name cannot be [self_deploy_server_key].');
 
             return Command::FAILURE;
         }
@@ -100,7 +107,7 @@ class CreateDeploymentFile extends Command
         $shouldCollect = false;
 
         // Check if we are creating a new one or if we should re-configure
-        if (!isset($deployments[$deploymentName]) || empty($deployments[$deploymentName])) {
+        if (! isset($deployments[$deploymentName]) || empty($deployments[$deploymentName])) {
             $shouldCollect = true;
         } elseif ($this->option('deployment-name') === null) {
             $this->line("Existing configuration found for [{$deploymentName}].");
@@ -135,13 +142,13 @@ class CreateDeploymentFile extends Command
             if ($isMultiServer) {
                 foreach ($serverKeys as $serverKey) {
                     $finalConfig[$serverKey] = [];
-                    foreach ($configKeys as $key) {
-                        $finalConfig[$serverKey][$key] = '';
+                    foreach ($configKeys as $key => $value) {
+                        $finalConfig[$serverKey][$key] = $value;
                     }
                 }
             } else {
-                foreach ($configKeys as $key) {
-                    $finalConfig[$key] = '';
+                foreach ($configKeys as $key => $value) {
+                    $finalConfig[$key] = $value;
                 }
             }
             $deployments[$deploymentName] = $finalConfig;
@@ -157,20 +164,21 @@ class CreateDeploymentFile extends Command
         }
 
         $directory = config('self-deploy.deployment_configurations_path', resource_path('deployments'));
-        if (!File::exists($directory)) {
+        if (! File::exists($directory)) {
             File::makeDirectory($directory, 0755, true);
         }
+
+        // Determine which keys to use for Blade variables
+        $keysForBlade = array_is_list($configKeys) ? $configKeys : array_keys($configKeys);
 
         if ($isMultiServer) {
             foreach ($serverKeys as $serverKey) {
                 $path = "{$directory}/{$deploymentName}-{$serverKey}.blade.php";
 
-                $content = "SERVER_KEY=\"\${SELF_DEPLOY_SERVER_KEY:-}\"\n\n";
-                $content .= "if [[ \"\$SERVER_KEY\" == \"{$serverKey}\" ]]; then\n";
-                foreach ($configKeys as $key) {
-                    $content .= "    " . strtoupper($key) . "=\"{{ \${$key} }}\"\n";
+                $content = "{{ \$self_deploy_server_key }}\n\n";
+                foreach ($keysForBlade as $key) {
+                    $content .= "{{ \${$key} }}\n";
                 }
-                $content .= "fi\n";
 
                 if (File::exists($path)) {
                     $this->warn("File [{$path}] already exists, overwriting...");
@@ -181,7 +189,7 @@ class CreateDeploymentFile extends Command
             }
         } else {
             $content = '';
-            foreach ($configKeys as $key) {
+            foreach ($keysForBlade as $key) {
                 $content .= "{{ \${$key} }}\n\n";
             }
 
@@ -189,7 +197,7 @@ class CreateDeploymentFile extends Command
 
             if (File::exists($path)) {
                 warning("File [{$path}] already exists!");
-                if (!$this->confirm('Do you want to overwrite it? All existing content will be lost.')) {
+                if (! $this->confirm('Do you want to overwrite it? All existing content will be lost.')) {
                     $this->info('Operation cancelled.');
 
                     return Command::SUCCESS;
@@ -218,21 +226,42 @@ class CreateDeploymentFile extends Command
     protected function collectServerKeys(): array
     {
         $keys = [];
-        $this->info('Enter Server Keys one by one. Press "d" to finish.');
+        $this->info('Enter Server Keys one by one. Press "Enter" on an empty line or "d" to finish. ');
 
         while (true) {
             $key = text(
                 label: 'Server Key (or "d" to done)',
                 placeholder: 'e.g. server01, worker01',
-                hint: 'Hint: This should be defined in .env as SELF_DEPLOY_SERVER_KEY',
-                required: false
+                required: true,
+                validate: function (string $value) use ($keys) {
+                    $value = trim($value);
+
+                    if ($value === 'd' || $value === '') {
+                        return null;
+                    }
+
+                    if (mb_strlen($value) < 4) {
+                        return 'Server key must be at least 4 characters.';
+                    }
+
+                    if (in_array($value, $keys)) {
+                        return 'Cannot use the same server key twice.';
+                    }
+
+                    if ($value === 'self_deploy_server_key') {
+                        return 'Server key cannot be [self_deploy_server_key].';
+                    }
+
+                    return null;
+                },
+                hint: 'Hint: This should be defined in .env as SELF_DEPLOY_SERVER_KEY'
             );
 
             if ($key === 'd' || $key === '') {
                 break;
             }
 
-            $keys[] = $key;
+            $keys[] = Str::snake($key);
         }
 
         return $keys;
@@ -248,21 +277,53 @@ class CreateDeploymentFile extends Command
 
         while (true) {
             $key = text(
-                label: 'Config Key (or "d" to done)',
-                placeholder: 'e.g. deploy_path, branch',
-                required: false
+                label: 'Config Key',
+                placeholder: 'e.g. deploy_path (or "d" to done)',
+                required: true,
+                validate: function (string $value) use ($keys) {
+                    $value = trim($value);
+
+                    if ($value === 'd') {
+                        return null;
+                    }
+
+                    if (mb_strlen($value) < 4) {
+                        return 'Config Key must be at least 4 characters.';
+                    }
+
+                    if (in_array($value, array_keys($keys))) {
+                        return 'Cannot redeclare config key.';
+                    }
+
+                    if ($value === 'self_deploy_server_key') {
+                        return 'Config key cannot be [self_deploy_server_key].';
+                    }
+
+                    return null;
+                },
             );
 
-            if ($key === 'd' || $key === '') {
+            if ($key === 'd') {
                 break;
             }
 
-            $keys[] = $key;
+            $key = Str::snake($key);
+
+            $defaultValue = text(
+                label: "Default value for [{$key}]",
+                placeholder: 'Leave blank for empty string',
+                required: false
+            );
+
+            if ($defaultValue === 'd') {
+                break;
+            }
+
+            $keys[$key] = $defaultValue;
         }
 
         return $keys;
     }
-
 
     /**
      * Update the config file with new values.
@@ -272,7 +333,7 @@ class CreateDeploymentFile extends Command
         $configPath = config_path('self-deploy.php');
 
         // If config doesn't exist in app, publish it first
-        if (!File::exists($configPath)) {
+        if (! File::exists($configPath)) {
             $this->call('vendor:publish', [
                 '--tag' => 'self-deploy-config',
                 '--force' => true,
@@ -285,7 +346,7 @@ class CreateDeploymentFile extends Command
         // Update only the environments key
         $existingConfig['environments'] = $configs;
 
-        $content = "<?php\n\nreturn " . ConfigFormatter::format($existingConfig) . ";\n";
+        $content = "<?php\n\nreturn ".ConfigFormatter::format($existingConfig).";\n";
 
         File::put($configPath, $content);
     }

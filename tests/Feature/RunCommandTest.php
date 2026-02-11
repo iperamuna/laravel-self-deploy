@@ -7,7 +7,7 @@ beforeEach(function () {
     config()->set('self-deploy.environments.testing', [
         'app-testing' => [
             'deploy_path' => '/var/www/test',
-        ]
+        ],
     ]);
 
     $this->scriptsPath = config('self-deploy.deployment_scripts_path');
@@ -16,7 +16,7 @@ beforeEach(function () {
 
 it('triggers shell mode by default', function () {
     // Create a mock script
-    File::put($this->scriptsPath . '/deploy.sh', 'echo "test"');
+    File::put($this->scriptsPath.'/deploy.sh', 'echo "test"');
 
     $this->artisan('selfdeploy:run', ['--force' => true])
         ->expectsOutputToContain('Found 1 deployment script(s).')
@@ -34,7 +34,7 @@ it('triggers systemd mode when configured', function () {
     $timestamp = $now->format('Ymd-His');
 
     // Create a mock script
-    File::put($this->scriptsPath . '/deploy.sh', 'echo "test"');
+    File::put($this->scriptsPath.'/deploy.sh', 'echo "test"');
 
     $this->artisan('selfdeploy:run', ['--force' => true])
         ->expectsOutputToContain('SUCCESS: Started systemd unit')
@@ -46,16 +46,16 @@ it('triggers systemd mode when configured', function () {
 
 it('can publish and then run', function () {
     // Setup a mock blade file first
-    $bladePath = config('self-deploy.deployment_configurations_path') . '/app-testing.blade.php';
+    $bladePath = config('self-deploy.deployment_configurations_path').'/app-testing.blade.php';
     File::put($bladePath, 'echo "Deploy"');
 
     $this->artisan('selfdeploy:run', [
         '--publish' => true,
-        '--force' => true
+        '--force' => true,
     ])
         ->expectsOutput('Publishing deployment scripts...')
         ->expectsOutput('Found 1 deployment script(s).')
         ->assertExitCode(0);
 
-    expect(File::exists($this->scriptsPath . '/app-testing.sh'))->toBeTrue();
+    expect(File::exists($this->scriptsPath.'/app-testing.sh'))->toBeTrue();
 });

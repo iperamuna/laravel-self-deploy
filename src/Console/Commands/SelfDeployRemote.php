@@ -30,15 +30,16 @@ class SelfDeployRemote extends Command
         $environment = $this->argument('environment');
         $configs = config('self-deploy.environments', []);
 
-        if (!$environment) {
+        if (! $environment) {
             $environment = $this->choice(
                 'Select environment for remote deployment',
                 array_keys($configs)
             );
         }
 
-        if (!isset($configs[$environment])) {
+        if (! isset($configs[$environment])) {
             $this->error("Environment [{$environment}] not found in config.");
+
             return Command::FAILURE;
         }
 
@@ -50,16 +51,18 @@ class SelfDeployRemote extends Command
         if (empty($hosts)) {
             $this->error("No hosts configured for environment [{$environment}].");
             $this->line('Add a [hosts] array to your environment configuration.');
+
             return Command::FAILURE;
         }
 
-        if (!$remotePath) {
+        if (! $remotePath) {
             $this->error("No [remote_path] configured for environment [{$environment}].");
             $this->line('This is the directory on the remote server where the PHP artisan command should run.');
+
             return Command::FAILURE;
         }
 
-        $this->info("Starting remote deployment for [{$environment}] across " . count($hosts) . " host(s).");
+        $this->info("Starting remote deployment for [{$environment}] across ".count($hosts).' host(s).');
 
         $publishFlag = $this->option('publish') ? ' --publish' : '';
         $remoteCommand = "cd {$remotePath} && php artisan selfdeploy:run --force{$publishFlag}";
@@ -67,7 +70,7 @@ class SelfDeployRemote extends Command
         $hasErrors = false;
 
         foreach ($hosts as $host) {
-            $this->info("--------------------------------------------------");
+            $this->info('--------------------------------------------------');
             $this->info("🚀 Deploying to: {$user}@{$host}");
 
             $sshCommand = sprintf(
@@ -93,14 +96,16 @@ class SelfDeployRemote extends Command
             }
         }
 
-        if (!$hasErrors) {
-            $this->info("--------------------------------------------------");
-            $this->info("✨ All remote deployments triggered successfully!");
+        if (! $hasErrors) {
+            $this->info('--------------------------------------------------');
+            $this->info('✨ All remote deployments triggered successfully!');
+
             return Command::SUCCESS;
         }
 
-        $this->error("--------------------------------------------------");
-        $this->error("⚠️ Some remote deployments failed.");
+        $this->error('--------------------------------------------------');
+        $this->error('⚠️ Some remote deployments failed.');
+
         return Command::FAILURE;
     }
 }
