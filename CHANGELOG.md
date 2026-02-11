@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.5.8] - 2026-02-12
+
+### Changed
+- **Blade Template Styling**: Cleaned up indentation and code style in the `base.blade.php` deployment template.
+
 ## [v1.5.7] - 2026-02-11
 
 ### Added

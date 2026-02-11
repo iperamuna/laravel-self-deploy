@@ -19,17 +19,17 @@ sudo mkdir -p "$LOG_DIR"
 exec > >(sudo tee -a "$LOG_FILE") 2>&1
 
 log() {
-echo "[$(date '+%F %T')] $*"
+  echo "[$(date '+%F %T')] $*"
 }
 
 log_cmd() {
-log "CMD: $*"
-"$@"
+  log "CMD: $*"
+  "$@"
 }
 
 run() {
-log "RUN: $*"
-"$@"
+  log "RUN: $*"
+  "$@"
 }
 
 # ------------------------
