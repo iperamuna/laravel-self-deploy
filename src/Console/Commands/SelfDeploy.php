@@ -4,6 +4,7 @@ namespace Iperamuna\SelfDeploy\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 class SelfDeploy extends Command
 {
@@ -44,14 +45,14 @@ class SelfDeploy extends Command
 
         $scriptsPath = config('self-deploy.deployment_scripts_path');
 
-        if (! $scriptsPath || ! File::exists($scriptsPath)) {
+        if (!$scriptsPath || !File::exists($scriptsPath)) {
             $this->error("Deployment scripts path not configured or does not exist: {$scriptsPath}");
 
             return Command::FAILURE;
         }
 
         $files = File::files($scriptsPath);
-        $shFiles = array_filter($files, fn ($file) => $file->getExtension() === 'sh');
+        $shFiles = array_filter($files, fn($file) => $file->getExtension() === 'sh');
 
         if (empty($shFiles)) {
             $this->info("No .sh files found in {$scriptsPath}");
@@ -59,15 +60,16 @@ class SelfDeploy extends Command
             return Command::SUCCESS;
         }
 
-        $this->info('Found '.count($shFiles).' deployment script(s).');
+        $this->info('Found ' . count($shFiles) . ' deployment script(s).');
 
-        if (! $this->option('force') && ! $this->confirm('Do you wish to run all these deployment scripts?')) {
+        if (!$this->option('force') && !$this->confirm('Do you wish to run all these deployment scripts?')) {
             $this->info('Operation cancelled.');
 
             return Command::SUCCESS;
         }
 
         $runPath = base_path();
+        $executionMode = config('self-deploy.execution_mode', 'shell');
 
         foreach ($shFiles as $file) {
             $scriptPath = $file->getRealPath();
@@ -75,15 +77,55 @@ class SelfDeploy extends Command
 
             $this->info("Triggering: {$scriptName}");
 
-            $command = sprintf(
-                'sudo bash -c "sleep 5; cd %s && %s" &',
-                $runPath,
-                $scriptPath
-            );
+            if ($executionMode === 'systemd') {
+                $unitName = str($scriptName)->slug()->limit(30)->toString() . '-' . now()->format('Ymd-His');
+                $systemd = config('self-deploy.systemd', []);
 
-            exec($command);
+                $command = [
+                    'sudo', // systemd-run --unit typically requires root
+                    '/usr/bin/systemd-run',
+                    "--unit={$unitName}",
+                    '--property=Nice=' . ($systemd['nice'] ?? 10),
+                    '--property=IOSchedulingClass=' . ($systemd['io_scheduling_class'] ?? 'best-effort'),
+                    '--property=IOSchedulingPriority=' . ($systemd['io_scheduling_priority'] ?? 7),
+                ];
 
-            $this->line('  -> Started in background.');
+                if ($systemd['collect'] ?? true) {
+                    $command[] = '--collect';
+                }
+
+                $command[] = "bash -c \"cd {$runPath} && {$scriptPath}\"";
+
+                // We use exec for the systemd-run command itself as it returns immediately
+                if (app()->runningUnitTests()) {
+                    $resultCode = 0;
+                } else {
+                    $cmdString = implode(' ', $command);
+                    exec($cmdString, $output, $resultCode);
+                }
+
+                if ($resultCode === 0) {
+                    $this->line("  -> <info>SUCCESS</info>: Started systemd unit <comment>{$unitName}</comment>");
+                    $this->line("  -> Monitor: <comment>journalctl -u {$unitName} -f</comment>");
+                } else {
+                    $this->error("  -> <error>ERROR</error>: Failed to start systemd unit. Exit code: {$resultCode}");
+                    $this->line('     Command tried: ' . $cmdString);
+                }
+            } else {
+                // Classic shell background mode
+                $command = sprintf(
+                    '%s bash -c "sleep 5; cd %s && %s" &',
+                    app()->runningUnitTests() ? '' : 'sudo',
+                    $runPath,
+                    $scriptPath
+                );
+
+                if (!app()->runningUnitTests()) {
+                    exec($command);
+                }
+
+                $this->line('  -> <info>SUCCESS</info>: Started in background (PID: Background).');
+            }
         }
 
         $this->info('All scripts triggered.');

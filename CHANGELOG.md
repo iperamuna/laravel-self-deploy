@@ -1,6 +1,19 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [v1.4.0] - 2026-02-11
+
+### Added
+- **Systemd Execution Mode**: Added support for running deployments as transient systemd units via `execution_mode => 'systemd'`.
+- **Resource Limiting**: Added configuration for CPU Niceness and IO scheduling to prevent deployments from starving the host system.
+- **Traceable Deployment Units**: Each deployment run now generates a unique, timestamped systemd unit for easier log tracking (e.g., `journalctl -u app-prod-sh-20240211-094500 -f`).
+- **New Feature Tests**: Added `RunCommandTest` to verify the execution mode logic and output messages.
+
+### Changed
+- Refactored `selfdeploy:run` command to support multiple execution strategies (Shell vs Systemd).
+- Updated internal date handling to use Laravel's `now()` for better testability and mocking.
+- Enhanced CLI feedback with monitoring hints for supervised deployments.
+
 
 ## [v1.3.0] - 2026-02-11
 

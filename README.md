@@ -12,8 +12,10 @@ A simple, opinionated Laravel package for managing self-hosted "Blue/Green" styl
 - **Blade-powered Scripts**: Uses Blade templates for your shell scripts, allowing you to inject config variables (like paths, service names) dynamically.
 - **Artifact Generation**: Compiles Blade templates into executable `.sh` files.
 - **Deployment Trigger**: Run all generated deployment scripts in the background via a single Artisan command.
+- **Systemd Supervision**: Supports running deployments as transient systemd units for better process isolation, automatic cleanup, and live monitoring.
+- **Resource Management**: Configure CPU Niceness and IO scheduling to prevent deployments from impacting web server performance.
 - **Blue/Green Ready**: The default template is set up for a Blue/Green deployment strategy using Systemd and Nginx upstream switching.
-- **Pretty Configuration**: Automatically formats your `config/self-deploy.php` with double-newline spacing for maximum readability when adding new environments or deployments.
+- **Pretty Configuration**: Automatically formats your `config/self-deploy.php` with double-newline spacing formatted as a standard PHP array.
 
 ## Installation
 
@@ -152,6 +154,31 @@ To automatically regenerate scripts before running:
 
 ```bash
 php artisan selfdeploy:run --publish
+```
+
+### Execution Modes
+
+You can control how scripts are executed in your `config/self-deploy.php`:
+
+#### 1. Shell Mode (Default)
+Runs scripts in the background using standard shell execution (`&`). Simple and cross-platform.
+
+#### 2. Systemd Mode (Recommended for Production)
+Runs each script as a transient systemd unit. This is ported from professional deployment actions and provides:
+- **Isolation**: Each deployment runs in its own unit.
+- **Resource Limiting**: Prevents high-CPU/IO tasks from lagging the main site.
+- **Live Logs**: Watch the deployment with `journalctl -u [unit-name] -f`.
+
+To enable Systemd mode:
+
+```php
+'execution_mode' => 'systemd',
+
+'systemd' => [
+    'nice' => 10,
+    'io_scheduling_class' => 'best-effort',
+    'io_scheduling_priority' => 7,
+],
 ```
 
 ## Roadmap
