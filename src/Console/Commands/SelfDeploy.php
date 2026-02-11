@@ -101,7 +101,10 @@ class SelfDeploy extends Command
 
                 $cmdString = implode(' ', $command);
 
-                if ($this->getOutput()->isVerbose() || app()->runningUnitTests()) {
+                if (app()->runningUnitTests()) {
+                    $this->info('USER_CONFIG_VALUE: '.($systemd['user'] ?? 'NULL'));
+                    $this->info("Systemd command: {$cmdString}");
+                } elseif ($this->getOutput()->isVerbose()) {
                     $this->info("Systemd command: {$cmdString}");
                 }
 

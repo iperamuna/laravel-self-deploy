@@ -12,6 +12,7 @@ beforeEach(function () {
 
     $scriptsPath = config('self-deploy.deployment_scripts_path');
     File::ensureDirectoryExists($scriptsPath);
+    File::cleanDirectory($scriptsPath);
 });
 
 it('triggers shell mode by default', function () {
@@ -72,10 +73,10 @@ it('triggers systemd mode with specific user when configured', function () {
 
     $scriptsPath = config('self-deploy.deployment_scripts_path');
     // Create a mock script
-    File::put($scriptsPath.'/deploy.sh', 'echo "test"');
+    File::put($scriptsPath.'/deploy-user.sh', 'echo "test"');
 
     // Let's force verbose output in the test call more explicitly.
-    $this->artisan('selfdeploy:run', ['--force' => true, '-v' => true])
-        ->expectsOutputToContain('Systemd command: sudo /usr/bin/systemd-run');
-    // ->expectsOutputToContain('User=testuser'); // TODO: Output capturing issue in test environment
+    $this->artisan('selfdeploy:run', ['--force' => true])
+        ->expectsOutputToContain('USER_CONFIG_VALUE: testuser')
+        ->expectsOutputToContain('User=testuser');
 });
