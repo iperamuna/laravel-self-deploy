@@ -38,6 +38,9 @@ return [
         'io_scheduling_priority' => 7,
         'collect' => true,
         'user' => env('SELF_DEPLOY_USER'), // Optional: Run the systemd unit as a specific user
+        'env' => [
+            'PATH' => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+        ],
     ],
 
 ];

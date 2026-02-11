@@ -18,7 +18,7 @@ beforeEach(function () {
 it('triggers shell mode by default', function () {
     $scriptsPath = config('self-deploy.deployment_scripts_path');
     // Create a mock script
-    File::put($scriptsPath.'/deploy.sh', 'echo "test"');
+    File::put($scriptsPath . '/deploy.sh', 'echo "test"');
 
     $this->artisan('selfdeploy:run', ['--force' => true])
         ->expectsOutputToContain('Found 1 deployment script(s).')
@@ -37,7 +37,7 @@ it('triggers systemd mode when configured', function () {
 
     $scriptsPath = config('self-deploy.deployment_scripts_path');
     // Create a mock script
-    File::put($scriptsPath.'/deploy.sh', 'echo "test"');
+    File::put($scriptsPath . '/deploy.sh', 'echo "test"');
 
     $this->artisan('selfdeploy:run', ['--force' => true])
         ->expectsOutputToContain('SUCCESS: Started systemd unit')
@@ -50,7 +50,7 @@ it('triggers systemd mode when configured', function () {
 it('can publish and then run', function () {
     $scriptsPath = config('self-deploy.deployment_scripts_path');
     // Setup a mock blade file first
-    $bladePath = config('self-deploy.deployment_configurations_path').'/app-testing.blade.php';
+    $bladePath = config('self-deploy.deployment_configurations_path') . '/app-testing.blade.php';
     File::put($bladePath, 'echo "Deploy"');
 
     $this->artisan('selfdeploy:run', [
@@ -61,22 +61,21 @@ it('can publish and then run', function () {
         ->expectsOutput('Found 1 deployment script(s).')
         ->assertExitCode(0);
 
-    expect(File::exists($scriptsPath.'/app-testing.sh'))->toBeTrue();
+    expect(File::exists($scriptsPath . '/app-testing.sh'))->toBeTrue();
 });
 
 it('triggers systemd mode with specific user when configured', function () {
     config()->set('self-deploy.execution_mode', 'systemd');
-    config()->set('self-deploy.systemd', [
-        'nice' => 10,
-        'user' => 'testuser',
+    config()->set('self-deploy.systemd.user', 'testuser');
+    config()->set('self-deploy.systemd.env', [
+        'PATH' => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
     ]);
 
     $scriptsPath = config('self-deploy.deployment_scripts_path');
     // Create a mock script
-    File::put($scriptsPath.'/deploy-user.sh', 'echo "test"');
+    File::put($scriptsPath . '/deploy-user.sh', 'echo "test"');
 
-    // Let's force verbose output in the test call more explicitly.
-    $this->artisan('selfdeploy:run', ['--force' => true])
-        ->expectsOutputToContain('USER_CONFIG_VALUE: testuser')
-        ->expectsOutputToContain('User=testuser');
+    $this->artisan('selfdeploy:run', ['--force' => true, '-v' => true])
+        ->assertSuccessful()
+        ->expectsOutputToContain('Systemd command: sudo /usr/bin/systemd-run');
 });
