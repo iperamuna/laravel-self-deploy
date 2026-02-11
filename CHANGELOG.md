@@ -18,4 +18,4 @@ All notable changes to this project will be documented in this file.
 - Rollback functionality.
 - Web interface.
 - Docker support.
-- Notifications (Slack/Discord).
+- Notifications (Slack/Discord/Telegram).

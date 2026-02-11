@@ -88,7 +88,7 @@ php artisan selfdeploy:run --publish
 - [ ] Implement rollback functionality.
 - [ ] Add web interface for managing deployments.
 - [ ] Support for Docker-based deployments.
-- [ ] Slack/Discord notifications integration.
+- [ ] Slack/Discord/Telegram notifications integration.
 
 ## License
 
