@@ -207,6 +207,72 @@ it('can publish all deployment scripts', function () {
     expect(File::exists(config('self-deploy.deployment_scripts_path') . '/app-worker.sh'))->toBeTrue();
 });
 
+it('can publish multi-server deployment scripts', function () {
+    // Setup nested multi-server config
+    config()->set('self-deploy.environments.production.multi-app', [
+        'server01' => ['deploy_path' => '/var/www/s1'],
+        'server02' => ['deploy_path' => '/var/www/s2'],
+    ]);
+
+    // Setup mock blade files for each server
+    $configDir = config('self-deploy.deployment_configurations_path');
+    File::ensureDirectoryExists($configDir);
+    File::put("{$configDir}/multi-app-server01.blade.php", 'echo "S1: {{ $deploy_path }}"');
+    File::put("{$configDir}/multi-app-server02.blade.php", 'echo "S2: {{ $deploy_path }}"');
+
+    $this->artisan('selfdeploy:publish-deployment-scripts', [
+        'deployment-name' => 'multi-app',
+        '--environment' => 'production',
+        '--force' => true,
+    ])
+        // It should ask for server selection if we didn't specify --all (Wait, does logic force prompt even if deployment-name arg is provided? Yes logic at lines 96+ runs if !--all)
+        // Wait, lines 96 check: if (is_array($first)) ... ask select.
+        ->expectsChoice('Select server to publish script for [multi-app]:', 'server01', ['All', 'server01', 'server02'])
+        ->expectsOutput('Deployment script created: ' . config('self-deploy.deployment_scripts_path') . '/multi-app-server01.sh')
+        ->doesntExpectOutput('Deployment script created: ' . config('self-deploy.deployment_scripts_path') . '/multi-app-server02.sh')
+        ->assertExitCode(0);
+
+    $script1 = config('self-deploy.deployment_scripts_path') . '/multi-app-server01.sh';
+    $script2 = config('self-deploy.deployment_scripts_path') . '/multi-app-server02.sh';
+
+    expect(File::exists($script1))->toBeTrue();
+    expect(File::exists($script2))->toBeFalse(); // Should not exist cause we selected only server01
+
+    expect(File::get($script1))->toContain('S1: /var/www/s1');
+});
+
+it('filters scripts by app.server_key when using --all', function () {
+    // Setup nested multi-server config
+    config()->set('self-deploy.environments.production.multi-app', [
+        'server01' => ['deploy_path' => '/var/www/s1'],
+        'server02' => ['deploy_path' => '/var/www/s2'],
+    ]);
+
+    // Simulate being on server02
+    config()->set('app.server_key', 'server02');
+
+    // Setup mock blade files
+    $configDir = config('self-deploy.deployment_configurations_path');
+    File::ensureDirectoryExists($configDir);
+    File::put("{$configDir}/multi-app-server01.blade.php", 'echo "S1"');
+    File::put("{$configDir}/multi-app-server02.blade.php", 'echo "S2"');
+
+    $this->artisan('selfdeploy:publish-deployment-scripts', [
+        '--all' => true,
+        '--environment' => 'production',
+        '--force' => true,
+    ])
+        ->doesntExpectOutput('Deployment script created: ' . config('self-deploy.deployment_scripts_path') . '/multi-app-server01.sh')
+        ->expectsOutput('Deployment script created: ' . config('self-deploy.deployment_scripts_path') . '/multi-app-server02.sh')
+        ->assertExitCode(0);
+
+    $script1 = config('self-deploy.deployment_scripts_path') . '/multi-app-server01.sh';
+    $script2 = config('self-deploy.deployment_scripts_path') . '/multi-app-server02.sh';
+
+    expect(File::exists($script1))->toBeFalse();
+    expect(File::exists($script2))->toBeTrue();
+});
+
 it('makes published scripts executable', function () {
     $bladePath = config('self-deploy.deployment_configurations_path') . '/app-production.blade.php';
     File::put($bladePath, 'echo "Deploying"');
@@ -360,8 +426,9 @@ it('prompts for multi-server configuration and server key', function () {
         ->expectsQuestion('Server Key (or "d" to done)', 'server01')
         ->expectsQuestion('Server Key (or "d" to done)', 'server02')
         ->expectsQuestion('Server Key (or "d" to done)', 'd')
-        ->expectsQuestion('Config Key (or "d" to done)', 'deploy_path')
-        ->expectsQuestion('Config Key (or "d" to done)', 'd')
+        ->expectsQuestion('Config Key', 'deploy_path')
+        ->expectsQuestion('Default value for [deploy_path]', '/var/www')
+        ->expectsQuestion('Config Key', 'd')
         ->expectsConfirmation('Do you want to generate the Bash script now?', 'no')
         ->assertExitCode(0);
 
@@ -374,6 +441,45 @@ it('prompts for multi-server configuration and server key', function () {
     expect(File::exists("{$configPath}/multi-server-app-server01.blade.php"))->toBeTrue();
     expect(File::exists("{$configPath}/multi-server-app-server02.blade.php"))->toBeTrue();
 
-    $content = File::get("{$configPath}/multi-server-app-server01.blade.php");
-    expect($content)->toContain('if [[ "$SERVER_KEY" == "server01" ]]; then');
+    $content1 = File::get("{$configPath}/multi-server-app-server01.blade.php");
+    expect($content1)->toContain('{{ $self_deploy_server_key }}')
+        ->toContain('{{ $deploy_path }}');
+});
+
+it('validates and snake_cases server and config keys', function () {
+    $this->artisan('selfdeploy:create-deployment-file')
+        ->expectsChoice('Select Environment or Add New', 'production', ['production', '+ Add New Environment'])
+        ->expectsChoice('Select Deployment Configuration or Add New', '+ Add New Deployment Configuration', ['app-production', 'app-frontend', '+ Add New Deployment Configuration'])
+        ->expectsQuestion('Enter deployment configuration name', 'validation-app')
+        ->expectsConfirmation('Does this deployment have multiple app servers?', 'yes')
+        // Test snake_case for server key
+        ->expectsQuestion('Server Key (or "d" to done)', 'App Server') // 9 chars, should pass
+        ->expectsQuestion('Server Key (or "d" to done)', 'd')
+        // Test snake_case for config key
+        ->expectsQuestion('Config Key', 'Deploy Path') // 11 chars, should pass
+        ->expectsQuestion('Default value for [deploy_path]', '/var/www')
+        ->expectsQuestion('Config Key', 'd')
+        ->expectsConfirmation('Do you want to generate the Bash script now?', 'no')
+        ->assertExitCode(0);
+
+    $configs = config('self-deploy.environments.production.validation-app');
+
+    // Check snaked keys
+    expect($configs)->toHaveKey('app_server');
+    expect($configs['app_server'])->toHaveKey('deploy_path');
+
+    $configPath = config('self-deploy.deployment_configurations_path');
+    $configPath = config('self-deploy.deployment_configurations_path');
+    $content = File::get("{$configPath}/validation-app-app_server.blade.php");
+    expect($content)->toContain('{{ $self_deploy_server_key }}')
+        ->toContain('{{ $deploy_path }}');
+});
+
+it('fails when using restricted key names', function () {
+    $this->artisan('selfdeploy:create-deployment-file')
+        ->expectsChoice('Select Environment or Add New', 'production', ['production', '+ Add New Environment'])
+        ->expectsChoice('Select Deployment Configuration or Add New', '+ Add New Deployment Configuration', ['app-production', 'app-frontend', '+ Add New Deployment Configuration'])
+        ->expectsQuestion('Enter deployment configuration name', 'self_deploy_server_key')
+        ->expectsOutput('Deployment name cannot be [self_deploy_server_key].')
+        ->assertExitCode(1);
 });

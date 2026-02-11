@@ -1,12 +1,16 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
-## [v1.5.2] - 2026-02-11
+## [v1.5.3] - 2026-02-11
 
 ### Added
-- **Nested Server Configuration**: The `create-deployment-file` command now supports nested multi-server configurations.
-- **Automated Script Naming**: Multi-server deployments now automatically follow the `{configuration}-{serverkey}.sh` naming convention.
-- **Improved Guarding**: Individual server scripts now contain environment-aware `SELF_DEPLOY_SERVER_KEY` guards.
+- **Key Validation**: The `create-deployment-file` command now validates server and config keys for a minimum length of 4 characters and uniqueness.
+- **Restricted Keys**: Prevented the use of reserved keyword `self_deploy_server_key` in deployment configurations.
+- **Automatic Snake Case**: All server and configuration keys are automatically formatted to `snake_case` for consistency.
+- **Config Injection**: Multi-server Blade templates now inject `config('app.server_key')` as the `$self_deploy_server_key` variable.
+- **Selective Publishing**: The `publish-deployment-scripts` command now prompts users to select specific servers (or all) when targeting a multi-server deployment.
+- **Smart Filtering**: When using `publish-deployment-scripts --all`, if `config('app.server_key')` is set, only the script matching that server key will be generated for multi-server deployments.
+- **Multi-Server Publishing Coverage**: Added comprehensive tests for automated publishing of nested server-specific scripts.
 
 ## [v1.5.1] - 2026-02-11
 

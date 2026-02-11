@@ -4,6 +4,7 @@ namespace Iperamuna\SelfDeploy\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use Iperamuna\SelfDeploy\Support\ConfigFormatter;
 
 use function Laravel\Prompts\confirm;
@@ -93,6 +94,11 @@ class CreateDeploymentFile extends Command
             return Command::FAILURE;
         }
 
+        if ($deploymentName === 'self_deploy_server_key') {
+            $this->error("Deployment name cannot be [self_deploy_server_key].");
+            return Command::FAILURE;
+        }
+
         // 3. Multi-Server Logic
         $isMultiServer = false;
         $serverKeys = [];
@@ -135,13 +141,13 @@ class CreateDeploymentFile extends Command
             if ($isMultiServer) {
                 foreach ($serverKeys as $serverKey) {
                     $finalConfig[$serverKey] = [];
-                    foreach ($configKeys as $key) {
-                        $finalConfig[$serverKey][$key] = '';
+                    foreach ($configKeys as $key => $value) {
+                        $finalConfig[$serverKey][$key] = $value;
                     }
                 }
             } else {
-                foreach ($configKeys as $key) {
-                    $finalConfig[$key] = '';
+                foreach ($configKeys as $key => $value) {
+                    $finalConfig[$key] = $value;
                 }
             }
             $deployments[$deploymentName] = $finalConfig;
@@ -161,16 +167,17 @@ class CreateDeploymentFile extends Command
             File::makeDirectory($directory, 0755, true);
         }
 
+        // Determine which keys to use for Blade variables
+        $keysForBlade = array_is_list($configKeys) ? $configKeys : array_keys($configKeys);
+
         if ($isMultiServer) {
             foreach ($serverKeys as $serverKey) {
                 $path = "{$directory}/{$deploymentName}-{$serverKey}.blade.php";
 
-                $content = "SERVER_KEY=\"\${SELF_DEPLOY_SERVER_KEY:-}\"\n\n";
-                $content .= "if [[ \"\$SERVER_KEY\" == \"{$serverKey}\" ]]; then\n";
-                foreach ($configKeys as $key) {
-                    $content .= "    " . strtoupper($key) . "=\"{{ \${$key} }}\"\n";
+                $content = "{{ \$self_deploy_server_key }}\n\n";
+                foreach ($keysForBlade as $key) {
+                    $content .= "{{ \${$key} }}\n";
                 }
-                $content .= "fi\n";
 
                 if (File::exists($path)) {
                     $this->warn("File [{$path}] already exists, overwriting...");
@@ -181,7 +188,7 @@ class CreateDeploymentFile extends Command
             }
         } else {
             $content = '';
-            foreach ($configKeys as $key) {
+            foreach ($keysForBlade as $key) {
                 $content .= "{{ \${$key} }}\n\n";
             }
 
@@ -218,21 +225,42 @@ class CreateDeploymentFile extends Command
     protected function collectServerKeys(): array
     {
         $keys = [];
-        $this->info('Enter Server Keys one by one. Press "d" to finish.');
+        $this->info('Enter Server Keys one by one. Press "Enter" on an empty line or "d" to finish. ');
 
         while (true) {
             $key = text(
                 label: 'Server Key (or "d" to done)',
                 placeholder: 'e.g. server01, worker01',
-                hint: 'Hint: This should be defined in .env as SELF_DEPLOY_SERVER_KEY',
-                required: false
+                required: true,
+                validate: function (string $value) use ($keys) {
+                    $value = trim($value);
+
+                    if ($value === 'd' || $value === '') {
+                        return null;
+                    }
+
+                    if (mb_strlen($value) < 4) {
+                        return 'Server key must be at least 4 characters.';
+                    }
+
+                    if (in_array($value, $keys)) {
+                        return 'Cannot use the same server key twice.';
+                    }
+
+                    if ($value === 'self_deploy_server_key') {
+                        return 'Server key cannot be [self_deploy_server_key].';
+                    }
+
+                    return null;
+                },
+                hint: 'Hint: This should be defined in .env as SELF_DEPLOY_SERVER_KEY'
             );
 
             if ($key === 'd' || $key === '') {
                 break;
             }
 
-            $keys[] = $key;
+            $keys[] = Str::snake($key);
         }
 
         return $keys;
@@ -248,16 +276,49 @@ class CreateDeploymentFile extends Command
 
         while (true) {
             $key = text(
-                label: 'Config Key (or "d" to done)',
-                placeholder: 'e.g. deploy_path, branch',
-                required: false
+                label: 'Config Key',
+                placeholder: 'e.g. deploy_path (or "d" to done)',
+                required: true,
+                validate: function (string $value) use ($keys) {
+                    $value = trim($value);
+
+                    if ($value === 'd') {
+                        return null;
+                    }
+
+                    if (mb_strlen($value) < 4) {
+                        return 'Config Key must be at least 4 characters.';
+                    }
+
+                    if (in_array($value, array_keys($keys))) {
+                        return 'Cannot redeclare config key.';
+                    }
+
+                    if ($value === 'self_deploy_server_key') {
+                        return 'Config key cannot be [self_deploy_server_key].';
+                    }
+
+                    return null;
+                },
             );
 
-            if ($key === 'd' || $key === '') {
+            if ($key === 'd') {
                 break;
             }
 
-            $keys[] = $key;
+            $key = Str::snake($key);
+
+            $defaultValue = text(
+                label: "Default value for [{$key}]",
+                placeholder: 'Leave blank for empty string',
+                required: false
+            );
+
+            if ($defaultValue === 'd') {
+                break;
+            }
+
+            $keys[$key] = $defaultValue;
         }
 
         return $keys;

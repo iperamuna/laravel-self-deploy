@@ -66,68 +66,56 @@ php artisan selfdeploy:create-deployment-file
 ```
 
 The command will guide you through:
-1. **Select or Add Environment**: Choose an existing environment or create a new one
-2. **Select or Add Deployment**: Choose an existing deployment configuration or create a new one
-3. **Add Config Keys** (if creating new): Dynamically add key-value pairs for your deployment
-   - Enter config key name (e.g., `deploy_path`, `branch`, `service`)
-   - Enter default value (blank values accepted as empty strings)
-   - Press `d` to finish adding keys
-4. **Generate Bash Script**: Optionally generate the deployment script immediately
+1. **Select or Add Environment**: Choose an existing environment or create a new one.
+2. **Select or Add Deployment**: Choose an existing deployment configuration or create a new one.
+3. **Multi-Server Setup**: Specify if this deployment spans multiple servers.
+   - **Interactive Server Keys**: If multi-server, enter your server identifiers (e.g., `web-01`, `worker-01`).
+   - Keys are automatically converted to `snake_case` and must be at least 4 characters.
+   - **Hint**: Ensure `SELF_DEPLOY_SERVER_KEY` is defined in each server's `.env` to match these keys.
+4. **Add Config Keys**: Dynamically add key-value pairs for your deployment.
+   - **Validation**: Keys must be unique and at least 4 characters.
+   - **Snake Case**: All keys are automatically formatted to `snake_case`.
+   - **Default Values**: Enter default values for each key (blank values accepted as empty strings).
+   - Press `d` to finish adding keys.
+5. **Multiple Artifact Generation**: For multi-server setups, individual Blade templates are created as `{configuration}-{serverkey}.blade.php`.
+6. **Generate Bash Script**: Optionally generate the deployment script(s) immediately.
 
-#### Non-Interactive Mode
-
-You can also pass options directly:
-
-```bash
-php artisan selfdeploy:create-deployment-file --environment=production --deployment-name=app-production
-```
-
-**Example: Creating a New Environment and Deployment Interactively**
+**Example: Creating a Multi-Server Setup Interactively**
 
 ```
 ❯ php artisan selfdeploy:create-deployment-file
 
- ┌ Select Environment or Add New ──────────────────────────┐
- │ › + Add New Environment                                  │
- │   production                                             │
- └──────────────────────────────────────────────────────────┘
+ Select Environment or Add New production
+ Select Deployment Configuration or Add New + Add New Deployment Configuration
+ Enter deployment configuration name laravel-app
+ Does this deployment have multiple app servers? Yes
 
- ┌ Enter new environment name ─────────────────────────────┐
- │ staging                                                  │
- └──────────────────────────────────────────────────────────┘
+ INFO Enter Server Keys one by one. Press "Enter" on an empty line or "d" to finish.
 
- ┌ Enter deployment configuration name ────────────────────┐
- │ app-staging                                              │
- └──────────────────────────────────────────────────────────┘
+ Server Key (or "d" to done) web-01
+ Server Key (or "d" to done) web-02
+ Server Key (or "d" to done) d
 
-   INFO  Enter configuration key-value pairs. Press "d" to finish.
+ INFO Enter configuration key names. Press "d" to finish.
 
- ┌ Config Key (or "d" to done) ────────────────────────────┐
- │ deploy_path                                              │
- └──────────────────────────────────────────────────────────┘
+ Config Key deploy_path
+ Default value for [deploy_path] /var/www/app
 
- ┌ Default value for [deploy_path] ────────────────────────┐
- │ /var/www/staging                                         │
- └──────────────────────────────────────────────────────────┘
+ Config Key branch
+ Default value for [branch] main
 
- ┌ Config Key (or "d" to done) ────────────────────────────┐
- │ branch                                                   │
- └──────────────────────────────────────────────────────────┘
+ Config Key d
 
- ┌ Default value for [branch] ─────────────────────────────┐
- │ staging                                                  │
- └──────────────────────────────────────────────────────────┘
+ INFO Deployment configuration [laravel-app] updated in [production].
+ Created: resources/deployments/laravel-app-web_01.blade.php
+ Created: resources/deployments/laravel-app-web_02.blade.php
+ 
+ # Example Content of laravel-app-web_01.blade.php
+ {{ $self_deploy_server_key }}
+ {{ $deploy_path }}
+ {{ $branch }}
 
- ┌ Config Key (or "d" to done) ────────────────────────────┐
- │ d                                                        │
- └──────────────────────────────────────────────────────────┘
-
-   INFO  Deployment configuration [app-staging] added to [staging].
-   INFO  Deployment file created successfully at: resources/deployments/app-staging.blade.php
-
- ┌ Do you want to generate the Bash script now? ───────────┐
- │ Yes                                                      │
- └──────────────────────────────────────────────────────────┘
+ Do you want to generate the Bash script now? Yes
 ```
 
 ### 2. Publish (Generate) Deployment Scripts

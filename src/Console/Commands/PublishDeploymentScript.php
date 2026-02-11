@@ -68,7 +68,15 @@ class PublishDeploymentScript extends Command
         $targetDeployments = [];
 
         if ($this->option('all')) {
-            $targetDeployments = array_keys($deployments);
+            $serverKey = config('app.server_key');
+            $limitServers = $serverKey ? [$serverKey] : [];
+
+            foreach (array_keys($deployments) as $depName) {
+                $targetDeployments[] = [
+                    'name' => $depName,
+                    'limit_servers' => $limitServers
+                ];
+            }
         } else {
             $deploymentName = $this->argument('deployment-name');
 
@@ -82,14 +90,61 @@ class PublishDeploymentScript extends Command
             }
 
             if ($deploymentName === 'All') {
-                $targetDeployments = array_keys($deployments);
+                foreach (array_keys($deployments) as $depName) {
+                    $targetDeployments[] = [
+                        'name' => $depName,
+                        'limit_servers' => []
+                    ];
+                }
             } else {
                 if (!isset($deployments[$deploymentName])) {
                     $this->error("Deployment [{$deploymentName}] not configured in environment [{$env}].");
 
                     return Command::FAILURE;
                 }
-                $targetDeployments[] = $deploymentName;
+
+                // Check if this deployment is multi-server
+                $deploymentConfig = $deployments[$deploymentName];
+                $first = reset($deploymentConfig);
+                if (is_array($first)) {
+                    // It is multi-server. Ask if user wants to deploy to specific servers.
+                    $serverOptions = array_merge(['All'], array_keys($deploymentConfig));
+                    $selectedServers = select(
+                        label: "Select server to publish script for [{$deploymentName}]:",
+                        options: $serverOptions,
+                        default: 'All'
+                    );
+
+                    if ($selectedServers === 'All') {
+                        $targetDeployments[] = $deploymentName;
+                    } else {
+                        // We need a way to pass this selection to generateScript. 
+                        // Since generateScript iterates over targetDeployments, we can use a composite key or store selection map.
+                        // Ideally, we can just store the fully qualified target like 'deployment:serverKey' but current structure expects keys of deployments array.
+                        // Let's store it as ['name' => $deploymentName, 'servers' => [$selectedServers]] to be cleaner, 
+                        // but to minimize refactoring, we can just filter logic in the loop or make $targetDeployments an assoc array.
+
+                        // Let's change $targetDeployments to hold detailed instruction: ['name' => ..., 'config' => ...]
+                        // But $targetDeployments logic loop at step 4 expects keys.
+
+                        // Simplest Refactor: 
+                        // Pass a filter to generateScript? 
+
+                        // Let's use a temporary property or pass variable. 
+                        // Actually, let's just make $targetDeployments an array of objects/arrays:
+                        // [['name' => 'app', 'servers' => ['s1']]]
+
+                        $targetDeployments[] = [
+                            'name' => $deploymentName,
+                            'limit_servers' => [$selectedServers]
+                        ];
+                    }
+                } else {
+                    $targetDeployments[] = [
+                        'name' => $deploymentName,
+                        'limit_servers' => []
+                    ];
+                }
             }
         }
 
@@ -112,8 +167,12 @@ class PublishDeploymentScript extends Command
         $hasErrors = false;
 
         // 4. Generate Scripts
-        foreach ($targetDeployments as $name) {
-            if (!$this->generateScript($name, $deployments[$name], $outputDir)) {
+        // 4. Generate Scripts
+        foreach ($targetDeployments as $target) {
+            $name = $target['name'];
+            $limitServers = $target['limit_servers'];
+
+            if (!$this->generateScript($name, $deployments[$name], $outputDir, $limitServers)) {
                 $hasErrors = true;
             }
         }
@@ -121,13 +180,18 @@ class PublishDeploymentScript extends Command
         return $hasErrors ? Command::FAILURE : Command::SUCCESS;
     }
 
-    protected function generateScript(string $name, array $configData, string $outputDir): bool
+    protected function generateScript(string $name, array $configData, string $outputDir, array $limitServers = []): bool
     {
         // Check if this is a multi-server config (heuristic: first element is an array)
         $first = reset($configData);
         if (is_array($first)) {
             $hasErrors = false;
             foreach ($configData as $serverKey => $serverConfig) {
+                // Check if we should skip this server based on limitServers
+                if (!empty($limitServers) && !in_array($serverKey, $limitServers)) {
+                    continue;
+                }
+
                 // For multi-server, the blade template is named {deployment}-{server}
                 $templateName = "{$name}-{$serverKey}";
                 // The output script should also probably be server-specific
@@ -148,6 +212,7 @@ class PublishDeploymentScript extends Command
         $viewData = array_merge($configData, [
             'script' => $templateName, // Pass to @include in base.blade.php
             'log_dir' => config('self-deploy.log_dir'),
+            'self_deploy_server_key' => config('app.server_key'),
         ]);
 
         try {
