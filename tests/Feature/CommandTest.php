@@ -20,7 +20,7 @@ beforeEach(function () {
 afterEach(function () {
     // Cleanup any created files
     $paths = [
-        resource_path('deployments'),
+        config('self-deploy.deployment_configurations_path'),
         config('self-deploy.deployment_scripts_path'),
     ];
 
@@ -37,12 +37,12 @@ it('can create deployment file with options', function () {
         '--environment' => 'production',
     ])
         ->expectsConfirmation('Do you want to generate the Bash script now?', 'no')
-        ->expectsOutput('Deployment file created successfully at: '.resource_path('deployments/app-production.blade.php'))
+        ->expectsOutput('Deployment file created successfully at: '.config('self-deploy.deployment_configurations_path').'/app-production.blade.php')
         ->assertExitCode(0);
 
-    expect(File::exists(resource_path('deployments/app-production.blade.php')))->toBeTrue();
+    expect(File::exists(config('self-deploy.deployment_configurations_path').'/app-production.blade.php'))->toBeTrue();
 
-    $content = File::get(resource_path('deployments/app-production.blade.php'));
+    $content = File::get(config('self-deploy.deployment_configurations_path').'/app-production.blade.php');
     expect($content)->toContain('{{ $deploy_path }}');
 });
 
@@ -66,7 +66,7 @@ it('fails when deployment not found in environment', function () {
 
 it('prompts for overwrite when file exists', function () {
     // Create file first
-    $path = resource_path('deployments/app-production.blade.php');
+    $path = config('self-deploy.deployment_configurations_path').'/app-production.blade.php';
     File::ensureDirectoryExists(dirname($path));
     File::put($path, 'existing content');
 
@@ -84,7 +84,7 @@ it('prompts for overwrite when file exists', function () {
 
 it('overwrites file when confirmed', function () {
     // Create file first
-    $path = resource_path('deployments/app-production.blade.php');
+    $path = config('self-deploy.deployment_configurations_path').'/app-production.blade.php';
     File::ensureDirectoryExists(dirname($path));
     File::put($path, 'existing content');
 
@@ -94,7 +94,7 @@ it('overwrites file when confirmed', function () {
     ])
         ->expectsConfirmation('Do you want to overwrite it? All existing content will be lost.', 'yes')
         ->expectsConfirmation('Do you want to generate the Bash script now?', 'no')
-        ->expectsOutput('Deployment file created successfully at: '.resource_path('deployments/app-production.blade.php'))
+        ->expectsOutput('Deployment file created successfully at: '.config('self-deploy.deployment_configurations_path').'/app-production.blade.php')
         ->assertExitCode(0);
 
     // File should have new content
@@ -111,12 +111,12 @@ it('generates bash script when confirmed', function () {
         ->expectsConfirmation('Do you want to generate the Bash script now?', 'yes')
         ->assertExitCode(0);
 
-    expect(File::exists(resource_path('deployments/app-production.blade.php')))->toBeTrue();
+    expect(File::exists(config('self-deploy.deployment_configurations_path').'/app-production.blade.php'))->toBeTrue();
     expect(File::exists(config('self-deploy.deployment_scripts_path').'/app-production.sh'))->toBeTrue();
 });
 
 it('creates directory if it does not exist', function () {
-    $deploymentDir = resource_path('deployments');
+    $deploymentDir = config('self-deploy.deployment_configurations_path');
 
     // Ensure directory doesn't exist
     if (File::exists($deploymentDir)) {
@@ -152,7 +152,7 @@ it('includes all config values in blade file', function () {
         ->expectsConfirmation('Do you want to generate the Bash script now?', 'no')
         ->assertExitCode(0);
 
-    $content = File::get(resource_path('deployments/test-deployment.blade.php'));
+    $content = File::get(config('self-deploy.deployment_configurations_path').'/test-deployment.blade.php');
 
     expect($content)->toContain('{{ $deploy_path }}')
         ->toContain('{{ $branch }}')
@@ -162,7 +162,7 @@ it('includes all config values in blade file', function () {
 
 it('can publish deployment scripts', function () {
     // Setup a mock blade file first
-    $bladePath = resource_path('deployments/app-production.blade.php');
+    $bladePath = config('self-deploy.deployment_configurations_path').'/app-production.blade.php';
     if (! File::exists(dirname($bladePath))) {
         File::makeDirectory(dirname($bladePath), 0755, true);
     }
@@ -183,12 +183,12 @@ it('can publish deployment scripts', function () {
 
 it('can publish all deployment scripts', function () {
     // Setup mock blade files
-    $bladePath1 = resource_path('deployments/app-production.blade.php');
+    $bladePath1 = config('self-deploy.deployment_configurations_path').'/app-production.blade.php';
     File::put($bladePath1, 'echo "Prod"');
 
     // Add another deployment to config for this test scope
     config()->set('self-deploy.environments.production.app-worker', ['deploy_path' => '/worker']);
-    $bladePath2 = resource_path('deployments/app-worker.blade.php');
+    $bladePath2 = config('self-deploy.deployment_configurations_path').'/app-worker.blade.php';
     File::put($bladePath2, 'echo "Worker"');
 
     $this->artisan('selfdeploy:publish-deployment-scripts', [
@@ -203,7 +203,7 @@ it('can publish all deployment scripts', function () {
 });
 
 it('makes published scripts executable', function () {
-    $bladePath = resource_path('deployments/app-production.blade.php');
+    $bladePath = config('self-deploy.deployment_configurations_path').'/app-production.blade.php';
     File::put($bladePath, 'echo "Deploying"');
 
     $this->artisan('selfdeploy:publish-deployment-scripts', [
@@ -235,9 +235,9 @@ it('handles empty config values gracefully', function () {
         ->expectsConfirmation('Do you want to generate the Bash script now?', 'no')
         ->assertExitCode(0);
 
-    expect(File::exists(resource_path('deployments/empty-deployment.blade.php')))->toBeTrue();
+    expect(File::exists(config('self-deploy.deployment_configurations_path').'/empty-deployment.blade.php'))->toBeTrue();
 
-    $content = File::get(resource_path('deployments/empty-deployment.blade.php'));
+    $content = File::get(config('self-deploy.deployment_configurations_path').'/empty-deployment.blade.php');
     expect($content)->toContain('{{ $deploy_path }}')
         ->toContain('{{ $branch }}');
 });
@@ -248,6 +248,7 @@ it('preserves existing config structure when updating', function () {
     // Manually create a proper config file
     $initialConfig = [
         'log_dir' => storage_path('self-deployments/logs'),
+        'deployment_configurations_path' => resource_path('deployments'),
         'deployment_scripts_path' => base_path('.deployments'),
         'environments' => [
             'production' => [
@@ -285,6 +286,7 @@ it('preserves existing config structure when updating', function () {
 
     // Verify original keys are preserved
     expect($updatedConfig)->toHaveKey('log_dir');
+    expect($updatedConfig)->toHaveKey('deployment_configurations_path');
     expect($updatedConfig)->toHaveKey('deployment_scripts_path');
     expect($updatedConfig)->toHaveKey('environments');
 
@@ -299,6 +301,7 @@ it('updates in-memory config when adding new deployment', function () {
     // Create initial config
     $initialConfig = [
         'log_dir' => storage_path('self-deployments/logs'),
+        'deployment_configurations_path' => resource_path('deployments'),
         'deployment_scripts_path' => base_path('.deployments'),
         'environments' => [
             'production' => [

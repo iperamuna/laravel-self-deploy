@@ -106,9 +106,8 @@ class PublishDeploymentScript extends Command
         }
 
         // Register view location so includes work
-        // IMPORTANT: In the package, we should respect the user's local deployments location
-        // Defaulting to resource_path('deployments') as it's the convention established
-        View::addLocation(resource_path('deployments'));
+        // Use configured deployment configurations path
+        View::addLocation(config('self-deploy.deployment_configurations_path', resource_path('deployments')));
 
         $hasErrors = false;
 

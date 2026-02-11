@@ -40,14 +40,18 @@ class TestCase extends Orchestra
         ]);
 
         // Define temp paths for tests
-        $deploymentsPath = __DIR__.'/temp/deployments';
-        config()->set('self-deploy.deployment_scripts_path', $deploymentsPath);
+        $scriptsPath = __DIR__.'/temp/scripts';
+        $configsPath = __DIR__.'/temp/configs';
+
+        config()->set('self-deploy.deployment_scripts_path', $scriptsPath);
+        config()->set('self-deploy.deployment_configurations_path', $configsPath);
 
         // Ensure clean slate
-        if (File::exists($deploymentsPath)) {
-            File::deleteDirectory($deploymentsPath);
+        if (File::exists(__DIR__.'/temp')) {
+            File::deleteDirectory(__DIR__.'/temp');
         }
-        File::makeDirectory($deploymentsPath, 0755, true);
+        File::makeDirectory($scriptsPath, 0755, true);
+        File::makeDirectory($configsPath, 0755, true);
     }
 
     protected function tearDown(): void

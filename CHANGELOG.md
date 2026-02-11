@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.2.0] - 2026-02-11
+
+### Added
+- **Customizable Configuration Path**: Added `deployment_configurations_path` to config, allowing users to customize where Blade deployment templates are stored.
+- Commands now respect the `deployment_configurations_path` setting when creating and publishing scripts.
+- Support for generating configurations in custom directories outside the default `resources/deployments`.
+
+### Changed
+- Refactored internal path handling to consistently use the new `deployment_configurations_path` config option.
+- Updated test suite to verify functionality across custom configuration paths.
+
 ## [v1.1.1] - 2026-02-11
 
 ### Fixed

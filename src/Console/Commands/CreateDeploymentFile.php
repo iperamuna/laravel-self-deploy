@@ -111,7 +111,7 @@ class CreateDeploymentFile extends Command
             $content .= "{{ \${$key} }}\n\n";
         }
 
-        $directory = resource_path('deployments'); // Keep as resource path for project customization
+        $directory = config('self-deploy.deployment_configurations_path', resource_path('deployments'));
         if (! File::exists($directory)) {
             File::makeDirectory($directory, 0755, true);
         }
