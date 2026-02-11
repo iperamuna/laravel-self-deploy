@@ -12,3 +12,10 @@ All notable changes to this project will be documented in this file.
 - Support for `self-deploy.php` configuration.
 - Support for Blue/Green deployment strategy via customizable templates.
 - Automated tests with Pest.
+
+### Roadmap (Future)
+- Remote server execution (SSH).
+- Rollback functionality.
+- Web interface.
+- Docker support.
+- Notifications (Slack/Discord).

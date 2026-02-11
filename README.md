@@ -82,6 +82,14 @@ To automatically regenerate scripts before running:
 php artisan selfdeploy:run --publish
 ```
 
+## Roadmap
+
+- [ ] Add support for remote server execution (SSH).
+- [ ] Implement rollback functionality.
+- [ ] Add web interface for managing deployments.
+- [ ] Support for Docker-based deployments.
+- [ ] Slack/Discord notifications integration.
+
 ## License
 
 The MIT License (MIT). Please see [License File](LICENSE) for more information.
