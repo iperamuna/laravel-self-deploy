@@ -211,6 +211,7 @@ class PublishDeploymentScript extends Command
     protected function renderAndSave(string $scriptName, string $templateName, array $configData, string $outputDir): bool
     {
         $viewData = array_merge($configData, [
+            'app_path' => base_path(),
             'script' => $templateName, // Pass to @include in base.blade.php
             'log_dir' => config('self-deploy.log_dir'),
             'self_deploy_server_key' => config('app.server_key'),
@@ -248,6 +249,8 @@ class PublishDeploymentScript extends Command
         }
 
         chmod($path, 0755);
+
+        exec('sudo chmod +x ' . escapeshellarg($path));
 
         $this->info("Deployment script created: {$path}");
 
