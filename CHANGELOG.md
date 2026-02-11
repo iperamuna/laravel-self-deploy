@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.2.1] - 2026-02-11
+
+### Changed
+- **Housekeeping**: Updated `.gitignore` to ignore internal release note templates and cleaned up git cache.
+
 ## [v1.2.0] - 2026-02-11
 
 ### Added
