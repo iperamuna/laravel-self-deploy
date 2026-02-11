@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [v1.5.2] - 2026-02-11
+
+### Added
+- **Nested Server Configuration**: The `create-deployment-file` command now supports nested multi-server configurations.
+- **Automated Script Naming**: Multi-server deployments now automatically follow the `{configuration}-{serverkey}.sh` naming convention.
+- **Improved Guarding**: Individual server scripts now contain environment-aware `SELF_DEPLOY_SERVER_KEY` guards.
+
 ## [v1.5.1] - 2026-02-11
 
 ### Added

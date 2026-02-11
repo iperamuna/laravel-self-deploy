@@ -69,7 +69,7 @@ class CreateDeploymentFile extends Command
 
         $deployments = $configs[$environment];
 
-        // 2. Select or Add Deployment
+        // 2. Select or Add Deployment Name
         if (!$deploymentName) {
             $deploymentOptions = array_keys($deployments);
             $deploymentOptions[] = '+ Add New Deployment Configuration';
@@ -86,45 +86,65 @@ class CreateDeploymentFile extends Command
                     placeholder: 'e.g., app-production, web-staging',
                     required: true
                 );
-
-                // Dynamic Config Input
-                $configValues = $this->collectConfigValues();
-
-                // Multi-server key support
-                if (confirm('Is this a multiple server deployment?', false)) {
-                    $serverKey = text(
-                        label: 'Enter Server Key variable',
-                        placeholder: 'e.g. {{ config("app.server_key") }}',
-                        hint: 'Hint: config(app.server_key) or Env SERVER_KEY',
-                        required: true
-                    );
-                    $configValues['server_key'] = $serverKey;
-                }
-
-                $deployments[$deploymentName] = $configValues;
-                $configs[$environment] = $deployments;
-
-                // Save to config file
-                $this->updateConfigFile($configs);
-
-                // Update in-memory config so subsequent commands (like bash generation) see the new config
-                config()->set('self-deploy.environments', $configs);
-
-                $this->info("Deployment configuration [{$deploymentName}] added to [{$environment}].");
             }
-        }
-
-        if (!isset($deployments[$deploymentName])) {
+        } elseif (!isset($deployments[$deploymentName])) {
             $this->error("Deployment [{$deploymentName}] not found in environment [{$environment}].");
 
             return Command::FAILURE;
         }
 
-        $configValues = $deployments[$deploymentName];
-        $content = '';
+        // 3. Multi-Server Logic
+        $isMultiServer = false;
+        $serverKeys = [];
+        $configKeys = [];
 
-        foreach ($configValues as $key => $value) {
-            $content .= "{{ \${$key} }}\n\n";
+        // Check if we are creating a new one or it's empty
+        if (!isset($deployments[$deploymentName]) || empty($deployments[$deploymentName])) {
+            $isMultiServer = confirm('Does this deployment have multiple app servers?', false);
+            if ($isMultiServer) {
+                $serverKeys = $this->collectServerKeys();
+            }
+            $configKeys = $this->collectConfigKeys();
+        } else {
+            // Use existing config to determine structure
+            $existing = $deployments[$deploymentName];
+            // Simple heuristic: if first element is an array, it's multi-server
+            $first = reset($existing);
+            if (is_array($first)) {
+                $isMultiServer = true;
+                $serverKeys = array_keys($existing);
+                $configKeys = array_keys($first);
+            } else {
+                $isMultiServer = false;
+                $configKeys = array_keys($existing);
+            }
+        }
+
+        // 5. Build Final Config Structure (only if newly collected)
+        if (!isset($deployments[$deploymentName]) || empty($deployments[$deploymentName])) {
+            $finalConfig = [];
+            if ($isMultiServer) {
+                foreach ($serverKeys as $serverKey) {
+                    $finalConfig[$serverKey] = [];
+                    foreach ($configKeys as $key) {
+                        $finalConfig[$serverKey][$key] = '';
+                    }
+                }
+            } else {
+                foreach ($configKeys as $key) {
+                    $finalConfig[$key] = '';
+                }
+            }
+            $deployments[$deploymentName] = $finalConfig;
+            $configs[$environment] = $deployments;
+
+            // Save to config file
+            $this->updateConfigFile($configs);
+            config()->set('self-deploy.environments', $configs);
+
+            $this->info("Deployment configuration [{$deploymentName}] updated in [{$environment}].");
+        } else {
+            $finalConfig = $deployments[$deploymentName];
         }
 
         $directory = config('self-deploy.deployment_configurations_path', resource_path('deployments'));
@@ -132,20 +152,44 @@ class CreateDeploymentFile extends Command
             File::makeDirectory($directory, 0755, true);
         }
 
-        $path = "{$directory}/{$deploymentName}.blade.php";
+        if ($isMultiServer) {
+            foreach ($serverKeys as $serverKey) {
+                $path = "{$directory}/{$deploymentName}-{$serverKey}.blade.php";
 
-        if (File::exists($path)) {
-            warning("File [{$path}] already exists!");
-            if (!$this->confirm('Do you want to overwrite it? All existing content will be lost.')) {
-                $this->info('Operation cancelled.');
+                $content = "SERVER_KEY=\"\${SELF_DEPLOY_SERVER_KEY:-}\"\n\n";
+                $content .= "if [[ \"\$SERVER_KEY\" == \"{$serverKey}\" ]]; then\n";
+                foreach ($configKeys as $key) {
+                    $content .= "    " . strtoupper($key) . "=\"{{ \${$key} }}\"\n";
+                }
+                $content .= "fi\n";
 
-                return Command::SUCCESS;
+                if (File::exists($path)) {
+                    $this->warn("File [{$path}] already exists, overwriting...");
+                }
+
+                File::put($path, $content);
+                $this->line("Created: <info>{$path}</info>");
             }
+        } else {
+            $content = '';
+            foreach ($configKeys as $key) {
+                $content .= "{{ \${$key} }}\n\n";
+            }
+
+            $path = "{$directory}/{$deploymentName}.blade.php";
+
+            if (File::exists($path)) {
+                warning("File [{$path}] already exists!");
+                if (!$this->confirm('Do you want to overwrite it? All existing content will be lost.')) {
+                    $this->info('Operation cancelled.');
+
+                    return Command::SUCCESS;
+                }
+            }
+
+            File::put($path, $content);
+            $this->info("Deployment file created successfully at: {$path}");
         }
-
-        File::put($path, $content);
-
-        $this->info("Deployment file created successfully at: {$path}");
 
         // Ask to generate bash file
         if (confirm('Do you want to generate the Bash script now?', true)) {
@@ -160,18 +204,18 @@ class CreateDeploymentFile extends Command
     }
 
     /**
-     * Collect config key-value pairs from user input.
+     * Collect server keys from user input.
      */
-    protected function collectConfigValues(): array
+    protected function collectServerKeys(): array
     {
-        $configValues = [];
-
-        $this->info('Enter configuration key-value pairs. Press "d" to finish.');
+        $keys = [];
+        $this->info('Enter Server Keys one by one. Press "d" to finish.');
 
         while (true) {
             $key = text(
-                label: 'Config Key (or "d" to done)',
-                placeholder: 'e.g., deploy_path, branch',
+                label: 'Server Key (or "d" to done)',
+                placeholder: 'e.g. server01, worker01',
+                hint: 'Hint: This should be defined in .env as SELF_DEPLOY_SERVER_KEY',
                 required: false
             );
 
@@ -179,18 +223,37 @@ class CreateDeploymentFile extends Command
                 break;
             }
 
-            $value = text(
-                label: "Default value for [{$key}]",
-                placeholder: 'Leave blank for empty string',
-                required: false,
-                default: ''
-            );
-
-            $configValues[$key] = $value;
+            $keys[] = $key;
         }
 
-        return $configValues;
+        return $keys;
     }
+
+    /**
+     * Collect configuration keys from user input.
+     */
+    protected function collectConfigKeys(): array
+    {
+        $keys = [];
+        $this->info('Enter configuration key names. Press "d" to finish.');
+
+        while (true) {
+            $key = text(
+                label: 'Config Key (or "d" to done)',
+                placeholder: 'e.g. deploy_path, branch',
+                required: false
+            );
+
+            if ($key === 'd' || $key === '') {
+                break;
+            }
+
+            $keys[] = $key;
+        }
+
+        return $keys;
+    }
+
 
     /**
      * Update the config file with new values.

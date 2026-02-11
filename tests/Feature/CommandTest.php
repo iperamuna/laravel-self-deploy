@@ -356,15 +356,24 @@ it('prompts for multi-server configuration and server key', function () {
         ->expectsChoice('Select Environment or Add New', 'production', ['production', '+ Add New Environment'])
         ->expectsChoice('Select Deployment Configuration or Add New', '+ Add New Deployment Configuration', ['app-production', 'app-frontend', '+ Add New Deployment Configuration'])
         ->expectsQuestion('Enter deployment configuration name', 'multi-server-app')
+        ->expectsConfirmation('Does this deployment have multiple app servers?', 'yes')
+        ->expectsQuestion('Server Key (or "d" to done)', 'server01')
+        ->expectsQuestion('Server Key (or "d" to done)', 'server02')
+        ->expectsQuestion('Server Key (or "d" to done)', 'd')
         ->expectsQuestion('Config Key (or "d" to done)', 'deploy_path')
-        ->expectsQuestion('Default value for [deploy_path]', '/var/www/app')
         ->expectsQuestion('Config Key (or "d" to done)', 'd')
-        ->expectsConfirmation('Is this a multiple server deployment?', 'yes')
-        ->expectsQuestion('Enter Server Key variable', '{{ config("app.server_key") }}')
         ->expectsConfirmation('Do you want to generate the Bash script now?', 'no')
         ->assertExitCode(0);
 
     $configs = config('self-deploy.environments.production.multi-server-app');
-    expect($configs)->toHaveKey('server_key');
-    expect($configs['server_key'])->toBe('{{ config("app.server_key") }}');
+    expect($configs)->toHaveKey('server01');
+    expect($configs)->toHaveKey('server02');
+    expect($configs['server01'])->toHaveKey('deploy_path');
+
+    $configPath = config('self-deploy.deployment_configurations_path');
+    expect(File::exists("{$configPath}/multi-server-app-server01.blade.php"))->toBeTrue();
+    expect(File::exists("{$configPath}/multi-server-app-server02.blade.php"))->toBeTrue();
+
+    $content = File::get("{$configPath}/multi-server-app-server01.blade.php");
+    expect($content)->toContain('if [[ "$SERVER_KEY" == "server01" ]]; then');
 });

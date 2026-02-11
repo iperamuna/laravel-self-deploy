@@ -35,17 +35,17 @@ class PublishDeploymentScript extends Command
     {
         // 1. Determine Environment
         $env = $this->option('environment');
-        if (! $env) {
+        if (!$env) {
             $env = app()->environment();
         }
 
         $configs = config('self-deploy.environments', []);
 
         // Validate environment exists in config
-        if (! isset($configs[$env])) {
+        if (!isset($configs[$env])) {
             $this->error("Environment [{$env}] not found in config/self-deploy.php.");
             // Allow user to select valid environment if available
-            if (! empty($configs)) {
+            if (!empty($configs)) {
                 $env = select(
                     label: 'Select valid environment from config used for deployment settings:',
                     options: array_keys($configs),
@@ -72,7 +72,7 @@ class PublishDeploymentScript extends Command
         } else {
             $deploymentName = $this->argument('deployment-name');
 
-            if (! $deploymentName) {
+            if (!$deploymentName) {
                 $options = array_merge(['All'], array_keys($deployments));
                 $deploymentName = select(
                     label: "Select deployment configuration for [{$env}]:",
@@ -84,7 +84,7 @@ class PublishDeploymentScript extends Command
             if ($deploymentName === 'All') {
                 $targetDeployments = array_keys($deployments);
             } else {
-                if (! isset($deployments[$deploymentName])) {
+                if (!isset($deployments[$deploymentName])) {
                     $this->error("Deployment [{$deploymentName}] not configured in environment [{$env}].");
 
                     return Command::FAILURE;
@@ -96,8 +96,8 @@ class PublishDeploymentScript extends Command
         // 3. Ensure Output Directory Exists
         $outputDir = config('self-deploy.deployment_scripts_path') ?? base_path();
 
-        if (! File::exists($outputDir)) {
-            if (! File::makeDirectory($outputDir, 0755, true)) {
+        if (!File::exists($outputDir)) {
+            if (!File::makeDirectory($outputDir, 0755, true)) {
                 $this->error("Failed to create directory: {$outputDir}");
 
                 return Command::FAILURE;
@@ -113,7 +113,7 @@ class PublishDeploymentScript extends Command
 
         // 4. Generate Scripts
         foreach ($targetDeployments as $name) {
-            if (! $this->generateScript($name, $deployments[$name], $outputDir)) {
+            if (!$this->generateScript($name, $deployments[$name], $outputDir)) {
                 $hasErrors = true;
             }
         }
@@ -123,57 +123,62 @@ class PublishDeploymentScript extends Command
 
     protected function generateScript(string $name, array $configData, string $outputDir): bool
     {
+        // Check if this is a multi-server config (heuristic: first element is an array)
+        $first = reset($configData);
+        if (is_array($first)) {
+            $hasErrors = false;
+            foreach ($configData as $serverKey => $serverConfig) {
+                // For multi-server, the blade template is named {deployment}-{server}
+                $templateName = "{$name}-{$serverKey}";
+                // The output script should also probably be server-specific
+                $scriptName = "{$name}-{$serverKey}";
+
+                if (!$this->renderAndSave($scriptName, $templateName, $serverConfig, $outputDir)) {
+                    $hasErrors = true;
+                }
+            }
+            return !$hasErrors;
+        }
+
+        return $this->renderAndSave($name, $name, $configData, $outputDir);
+    }
+
+    protected function renderAndSave(string $scriptName, string $templateName, array $configData, string $outputDir): bool
+    {
         $viewData = array_merge($configData, [
-            'script' => $name, // Pass to @include
+            'script' => $templateName, // Pass to @include in base.blade.php
             'log_dir' => config('self-deploy.log_dir'),
         ]);
 
         try {
-            // Using 'self-deploy::base' as the base template provided by the package
-            // But checking if user has published/overridden it?
-            // For now, let's use view('self-deploy::base') assuming the package provider registers it.
-            // However, the original code used view()->file(resource_path(...)).
-            // If the user hasn't published the base.blade.php, we should use the package one.
-
             if (view()->exists('self-deploy::base')) {
                 $content = view('self-deploy::base', $viewData)->render();
             } else {
-                // Fallback or explicit file checking if view namespacing fails (e.g. during dev)
-                // This path assumes we are in the package structure, but this code runs in the app.
-                // It's safer to rely on the ServiceProvider registration.
                 $content = view()->file(resource_path('deployments/base.blade.php'), $viewData)->render();
             }
         } catch (\Exception $e) {
-            // If 'self-deploy::base' fails (e.g. not registered yet or package dev mode), fallback to local path if exists
             if (File::exists(resource_path('deployments/base.blade.php'))) {
                 try {
                     $content = view()->file(resource_path('deployments/base.blade.php'), $viewData)->render();
                 } catch (\Exception $ex) {
-                    $this->error("Error rendering template for [{$name}]: ".$ex->getMessage());
-
+                    $this->error("Error rendering template for [{$scriptName}]: " . $ex->getMessage());
                     return false;
                 }
             } else {
-                $this->error("Error rendering template for [{$name}]: ".$e->getMessage());
-
+                $this->error("Error rendering template for [{$scriptName}]: " . $e->getMessage());
                 return false;
             }
         }
 
-        $filename = "{$name}.sh";
-        $path = $outputDir.DIRECTORY_SEPARATOR.$filename;
+        $filename = "{$scriptName}.sh";
+        $path = $outputDir . DIRECTORY_SEPARATOR . $filename;
 
         if (File::put($path, $content) === false) {
             $this->error("Failed to write to {$path}");
-
             return false;
         }
 
-        // Make executable
         chmod($path, 0755);
-
-        // Run sudo chmod +x as requested - REMOVED for better portability and testability
-        // exec("sudo chmod +x {$path}");
 
         $this->info("Deployment script created: {$path}");
 
