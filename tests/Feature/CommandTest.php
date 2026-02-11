@@ -350,3 +350,21 @@ it('updates in-memory config when adding new deployment', function () {
     expect($inMemoryConfig['staging']['app-staging']['deploy_path'])->toBe('/var/www/staging');
     expect($inMemoryConfig['staging']['app-staging']['branch'])->toBe('staging');
 });
+
+it('prompts for multi-server configuration and server key', function () {
+    $this->artisan('selfdeploy:create-deployment-file')
+        ->expectsChoice('Select Environment or Add New', 'production', ['production', '+ Add New Environment'])
+        ->expectsChoice('Select Deployment Configuration or Add New', '+ Add New Deployment Configuration', ['app-production', 'app-frontend', '+ Add New Deployment Configuration'])
+        ->expectsQuestion('Enter deployment configuration name', 'multi-server-app')
+        ->expectsQuestion('Config Key (or "d" to done)', 'deploy_path')
+        ->expectsQuestion('Default value for [deploy_path]', '/var/www/app')
+        ->expectsQuestion('Config Key (or "d" to done)', 'd')
+        ->expectsConfirmation('Is this a multiple server deployment?', 'yes')
+        ->expectsQuestion('Enter Server Key variable', '{{ config("app.server_key") }}')
+        ->expectsConfirmation('Do you want to generate the Bash script now?', 'no')
+        ->assertExitCode(0);
+
+    $configs = config('self-deploy.environments.production.multi-server-app');
+    expect($configs)->toHaveKey('server_key');
+    expect($configs['server_key'])->toBe('{{ config("app.server_key") }}');
+});

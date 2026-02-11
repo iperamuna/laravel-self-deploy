@@ -40,7 +40,7 @@ class CreateDeploymentFile extends Command
         $configs = config('self-deploy.environments', []);
 
         // 1. Select or Add Environment
-        if (! $environment) {
+        if (!$environment) {
             $environmentOptions = array_keys($configs);
             $environmentOptions[] = '+ Add New Environment';
 
@@ -61,7 +61,7 @@ class CreateDeploymentFile extends Command
             }
         }
 
-        if (! isset($configs[$environment])) {
+        if (!isset($configs[$environment])) {
             $this->error("Environment [{$environment}] not found in config.");
 
             return Command::FAILURE;
@@ -70,7 +70,7 @@ class CreateDeploymentFile extends Command
         $deployments = $configs[$environment];
 
         // 2. Select or Add Deployment
-        if (! $deploymentName) {
+        if (!$deploymentName) {
             $deploymentOptions = array_keys($deployments);
             $deploymentOptions[] = '+ Add New Deployment Configuration';
 
@@ -89,6 +89,18 @@ class CreateDeploymentFile extends Command
 
                 // Dynamic Config Input
                 $configValues = $this->collectConfigValues();
+
+                // Multi-server key support
+                if (confirm('Is this a multiple server deployment?', false)) {
+                    $serverKey = text(
+                        label: 'Enter Server Key variable',
+                        placeholder: 'e.g. {{ config("app.server_key") }}',
+                        hint: 'Hint: config(app.server_key) or Env SERVER_KEY',
+                        required: true
+                    );
+                    $configValues['server_key'] = $serverKey;
+                }
+
                 $deployments[$deploymentName] = $configValues;
                 $configs[$environment] = $deployments;
 
@@ -102,7 +114,7 @@ class CreateDeploymentFile extends Command
             }
         }
 
-        if (! isset($deployments[$deploymentName])) {
+        if (!isset($deployments[$deploymentName])) {
             $this->error("Deployment [{$deploymentName}] not found in environment [{$environment}].");
 
             return Command::FAILURE;
@@ -116,7 +128,7 @@ class CreateDeploymentFile extends Command
         }
 
         $directory = config('self-deploy.deployment_configurations_path', resource_path('deployments'));
-        if (! File::exists($directory)) {
+        if (!File::exists($directory)) {
             File::makeDirectory($directory, 0755, true);
         }
 
@@ -124,7 +136,7 @@ class CreateDeploymentFile extends Command
 
         if (File::exists($path)) {
             warning("File [{$path}] already exists!");
-            if (! $this->confirm('Do you want to overwrite it? All existing content will be lost.')) {
+            if (!$this->confirm('Do you want to overwrite it? All existing content will be lost.')) {
                 $this->info('Operation cancelled.');
 
                 return Command::SUCCESS;
@@ -188,7 +200,7 @@ class CreateDeploymentFile extends Command
         $configPath = config_path('self-deploy.php');
 
         // If config doesn't exist in app, publish it first
-        if (! File::exists($configPath)) {
+        if (!File::exists($configPath)) {
             $this->call('vendor:publish', [
                 '--tag' => 'self-deploy-config',
                 '--force' => true,
@@ -201,7 +213,7 @@ class CreateDeploymentFile extends Command
         // Update only the environments key
         $existingConfig['environments'] = $configs;
 
-        $content = "<?php\n\nreturn ".ConfigFormatter::format($existingConfig).";\n";
+        $content = "<?php\n\nreturn " . ConfigFormatter::format($existingConfig) . ";\n";
 
         File::put($configPath, $content);
     }

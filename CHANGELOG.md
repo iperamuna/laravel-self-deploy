@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [v1.5.1] - 2026-02-11
+
+### Added
+- **Interactive Multi-Server Prompts**: The `create-deployment-file` command now interactively asks if a deployment is for multiple servers and collects a `server_key` variable.
+- **Improved UX**: Added helpful hints for common server key patterns (e.g., `config(app.server_key)` or `SERVER_KEY`).
+
 ## [v1.5.0] - 2026-02-11
 
 ### Added
