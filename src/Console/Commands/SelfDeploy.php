@@ -60,7 +60,7 @@ class SelfDeploy extends Command
         $this->info('Publishing deployment scripts...');
 
         $exitCode = $this->call('selfdeploy:publish-deployment-scripts', [
-            '--all'   => true,
+            '--all' => true,
             '--force' => true,
         ]);
 
@@ -116,7 +116,8 @@ class SelfDeploy extends Command
         $systemd = config('self-deploy.systemd', []);
         $workDir = base_path();
 
-        $unitName = Str::slug(pathinfo($scriptName, PATHINFO_FILENAME))
+        $unitName = Str::of(pathinfo($scriptName, PATHINFO_FILENAME))
+            ->slug()
             ->limit(30, '')
             ->append('-'.now()->format('Ymd-His'));
 

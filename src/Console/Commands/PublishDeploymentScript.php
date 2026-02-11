@@ -33,6 +33,12 @@ class PublishDeploymentScript extends Command
      */
     public function handle()
     {
+        if (! app()->runningUnitTests() && posix_getuid() !== 0) {
+            $this->error('This command must be run with sudo.');
+
+            return Command::FAILURE;
+        }
+
         // 1. Determine Environment
         $env = $this->option('environment');
         if (! $env) {
@@ -250,7 +256,9 @@ class PublishDeploymentScript extends Command
 
         chmod($path, 0755);
 
-        exec('sudo chmod +x ' . escapeshellarg($path));
+        if (! app()->runningUnitTests()) {
+            exec('sudo chmod +x '.escapeshellarg($path));
+        }
 
         $this->info("Deployment script created: {$path}");
 

@@ -122,12 +122,14 @@ The command will guide you through:
 
 Compile your Blade templates into executable `.sh` scripts in your configured `deployment_scripts_path`.
 
+> **Note**: This command requires `sudo` privileges to ensure scripts are marked as executable and owned correctly.
+
 ```bash
 # Interactive (Select deployment & optional server)
-php artisan selfdeploy:publish-deployment-scripts
+sudo php artisan selfdeploy:publish-deployment-scripts
 
 # All deployments in production (Smart Filtering applies)
-php artisan selfdeploy:publish-deployment-scripts --all --environment=production --force
+sudo php artisan selfdeploy:publish-deployment-scripts --all --environment=production --force
 ```
 
 **Smart Filtering**: If you run with `--all` on a server where `config('app.server_key')` is set, only the script matching that server key will be generated for multi-server deployments.
@@ -176,6 +178,10 @@ To enable Systemd mode:
     'nice' => 10,
     'io_scheduling_class' => 'best-effort',
     'io_scheduling_priority' => 7,
+    'user' => env('SELF_DEPLOY_USER'), // Optional: Run as specific user
+    'env' => [
+        'PATH' => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+    ],
 ],
 ```
 

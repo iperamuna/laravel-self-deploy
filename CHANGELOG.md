@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.5.7] - 2026-02-11
+
+### Added
+- **Permission Enforcement**: `publish-deployment-scripts` now enforces `sudo` usage to ensure scripts are created with correct permissions.
+- **Improved Logging**: Background execution messages in `selfdeploy:run` are now cleaner.
+- **Process Robustness**: Shell execution mode now uses `/bin/bash -lc` for better environment login state compatibility.
+
+### Fixed
+- **Fluent Strings**: Resolved a "Call to a member function limit() on string" bug in the `selfdeploy:run` command when generating systemd unit names.
+
 ## [v1.5.6] - 2026-02-11
 
 ### Added
