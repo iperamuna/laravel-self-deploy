@@ -97,9 +97,19 @@ class CreateDeploymentFile extends Command
         $isMultiServer = false;
         $serverKeys = [];
         $configKeys = [];
+        $shouldCollect = false;
 
-        // Check if we are creating a new one or it's empty
+        // Check if we are creating a new one or if we should re-configure
         if (!isset($deployments[$deploymentName]) || empty($deployments[$deploymentName])) {
+            $shouldCollect = true;
+        } elseif ($this->option('deployment-name') === null) {
+            $this->line("Existing configuration found for [{$deploymentName}].");
+            if (confirm('Do you want to re-configure the server/config keys?', false)) {
+                $shouldCollect = true;
+            }
+        }
+
+        if ($shouldCollect) {
             $isMultiServer = confirm('Does this deployment have multiple app servers?', false);
             if ($isMultiServer) {
                 $serverKeys = $this->collectServerKeys();
@@ -108,7 +118,6 @@ class CreateDeploymentFile extends Command
         } else {
             // Use existing config to determine structure
             $existing = $deployments[$deploymentName];
-            // Simple heuristic: if first element is an array, it's multi-server
             $first = reset($existing);
             if (is_array($first)) {
                 $isMultiServer = true;
@@ -121,7 +130,7 @@ class CreateDeploymentFile extends Command
         }
 
         // 5. Build Final Config Structure (only if newly collected)
-        if (!isset($deployments[$deploymentName]) || empty($deployments[$deploymentName])) {
+        if ($shouldCollect) {
             $finalConfig = [];
             if ($isMultiServer) {
                 foreach ($serverKeys as $serverKey) {
