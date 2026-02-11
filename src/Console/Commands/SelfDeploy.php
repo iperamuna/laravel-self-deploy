@@ -101,10 +101,7 @@ class SelfDeploy extends Command
 
                 $cmdString = implode(' ', $command);
 
-                if ($this->getOutput()->isVerbose()) {
-                    $this->info("Systemd command: {$cmdString}");
-                } elseif (app()->runningUnitTests()) {
-                    // Force output during tests for verification
+                if ($this->getOutput()->isVerbose() || app()->runningUnitTests()) {
                     $this->info("Systemd command: {$cmdString}");
                 }
 
