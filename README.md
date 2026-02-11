@@ -214,7 +214,7 @@ php artisan selfdeploy:remote-deploy production --publish
 
 ## Roadmap
 
-- [ ] Add support for remote server execution (SSH).
+- [x] Add support for remote server execution (SSH).
 - [ ] Implement rollback functionality.
 - [ ] Add web interface for managing deployments.
 - [ ] Support for Docker-based deployments.
