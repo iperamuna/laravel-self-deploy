@@ -1,11 +1,17 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [v1.4.2] - 2026-02-11
+
+### Changed
+- **Nested Log Structure**: Log files are now stored in a script-specific subdirectory within the log directory (e.g., `logs/app-production/deployment-YYYY-MM-DD_HHMMSS.log`).
+- **Robust Log Creation**: Improved `base.blade.php` to ensure the parent directory of the log file is created correctly before redirecting output.
+
 ## [v1.4.1] - 2026-02-11
 
 ### Changed
-- **Predictable Log Naming**: Updated `base.blade.php` to use the deployment name in log files (e.g., `app-production-deployment-YYYY-MM-DD_HHMMSS.log`) instead of the generic `deploy-blue-green-*`.
-- **Improved Logging Feedback**: Updated the deployment started message to include the deployment name for better clarity.
+- **Predictable Log Naming**: Updated `base.blade.php` to use the deployment name in log files instead of the generic `deploy-blue-green-*`.
+- **Improved Logging Feedback**: Updated the deployment started message to include the deployment name.
 
 ## [v1.4.0] - 2026-02-11
 

@@ -180,7 +180,9 @@ it('can publish deployment scripts', function () {
     expect(File::exists($scriptPath))->toBeTrue();
     $content = File::get($scriptPath);
     expect($content)->toContain('/var/www/test-app')
-        ->toContain('LOG_FILE="${LOG_DIR}/app-production-deployment-$(date +%F_%H%M%S).log"')
+        ->toContain('LOG_DIR="' . config('self-deploy.log_dir') . '/app-production"')
+        ->toContain('LOG_FILE="${LOG_DIR}/deployment-$(date +%F_%H%M%S).log"')
+        ->toContain('exec > >(sudo tee -a "$LOG_FILE") 2>&1')
         ->toContain('log "==== app-production deployment started ===="');
 });
 
