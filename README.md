@@ -90,6 +90,19 @@ php artisan selfdeploy:run --publish
 - [ ] Support for Docker-based deployments.
 - [ ] Slack/Discord/Telegram notifications integration.
 
+## Development
+
+To run the package tests:
+
+```bash
+composer test
+```
+Or run Pest manually:
+
+```bash
+vendor/bin/pest
+```
+
 ## License
 
 The MIT License (MIT). Please see [License File](LICENSE) for more information.

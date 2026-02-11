@@ -1,0 +1,9 @@
+vendor
+.idea
+.vscode
+composer.lock
+tests/temp/
+test-reports/
+phpunit.xml
+.phpunit.result.cache
+.env
