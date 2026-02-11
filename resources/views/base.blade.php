@@ -9,12 +9,20 @@ LOG_FILE="${LOG_DIR}/deployment-$(date +%F_%H%M%S).log"
 sudo mkdir -p "$LOG_DIR"
 exec > >(sudo tee -a "$LOG_FILE") 2>&1
 
-log() { echo "[$(date '+%F %T')] $*"; }
+log() {
+  echo "[$(date '+%F %T')] $*";
+}
+
+# Run a Systemctl commands and log it clearly
+log_cmd() {
+  echo "[$(date '+%F %T')] $*"
+  "$@"
+}
 
 # Run a command and log it clearly
 run() {
-log "RUN: $*"
-"$@"
+  log "RUN: $*"
+  "$@"
 }
 
 log "==== {{ $script }} deployment started ===="

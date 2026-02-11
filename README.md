@@ -146,6 +146,14 @@ To automatically regenerate scripts before running:
 php artisan selfdeploy:run --publish
 ```
 
+### Available Shell Helpers
+
+The base deployment script provides several helper functions you can use in your Blade templates:
+
+- `log "message"`: Logs a message with a timestamp.
+- `run "command"`: Logs "RUN: command" and then executes it.
+- `log_cmd "command"`: Logs the command with a timestamp and then executes it (useful for systemctl commands).
+
 ### Execution Modes
 
 You can control how scripts are executed in your `config/self-deploy.php`:

@@ -35,17 +35,17 @@ class PublishDeploymentScript extends Command
     {
         // 1. Determine Environment
         $env = $this->option('environment');
-        if (!$env) {
+        if (! $env) {
             $env = app()->environment();
         }
 
         $configs = config('self-deploy.environments', []);
 
         // Validate environment exists in config
-        if (!isset($configs[$env])) {
+        if (! isset($configs[$env])) {
             $this->error("Environment [{$env}] not found in config/self-deploy.php.");
             // Allow user to select valid environment if available
-            if (!empty($configs)) {
+            if (! empty($configs)) {
                 $env = select(
                     label: 'Select valid environment from config used for deployment settings:',
                     options: array_keys($configs),
@@ -74,13 +74,13 @@ class PublishDeploymentScript extends Command
             foreach (array_keys($deployments) as $depName) {
                 $targetDeployments[] = [
                     'name' => $depName,
-                    'limit_servers' => $limitServers
+                    'limit_servers' => $limitServers,
                 ];
             }
         } else {
             $deploymentName = $this->argument('deployment-name');
 
-            if (!$deploymentName) {
+            if (! $deploymentName) {
                 $options = array_merge(['All'], array_keys($deployments));
                 $deploymentName = select(
                     label: "Select deployment configuration for [{$env}]:",
@@ -93,11 +93,11 @@ class PublishDeploymentScript extends Command
                 foreach (array_keys($deployments) as $depName) {
                     $targetDeployments[] = [
                         'name' => $depName,
-                        'limit_servers' => []
+                        'limit_servers' => [],
                     ];
                 }
             } else {
-                if (!isset($deployments[$deploymentName])) {
+                if (! isset($deployments[$deploymentName])) {
                     $this->error("Deployment [{$deploymentName}] not configured in environment [{$env}].");
 
                     return Command::FAILURE;
@@ -118,31 +118,31 @@ class PublishDeploymentScript extends Command
                     if ($selectedServers === 'All') {
                         $targetDeployments[] = $deploymentName;
                     } else {
-                        // We need a way to pass this selection to generateScript. 
+                        // We need a way to pass this selection to generateScript.
                         // Since generateScript iterates over targetDeployments, we can use a composite key or store selection map.
                         // Ideally, we can just store the fully qualified target like 'deployment:serverKey' but current structure expects keys of deployments array.
-                        // Let's store it as ['name' => $deploymentName, 'servers' => [$selectedServers]] to be cleaner, 
+                        // Let's store it as ['name' => $deploymentName, 'servers' => [$selectedServers]] to be cleaner,
                         // but to minimize refactoring, we can just filter logic in the loop or make $targetDeployments an assoc array.
 
                         // Let's change $targetDeployments to hold detailed instruction: ['name' => ..., 'config' => ...]
                         // But $targetDeployments logic loop at step 4 expects keys.
 
-                        // Simplest Refactor: 
-                        // Pass a filter to generateScript? 
+                        // Simplest Refactor:
+                        // Pass a filter to generateScript?
 
-                        // Let's use a temporary property or pass variable. 
+                        // Let's use a temporary property or pass variable.
                         // Actually, let's just make $targetDeployments an array of objects/arrays:
                         // [['name' => 'app', 'servers' => ['s1']]]
 
                         $targetDeployments[] = [
                             'name' => $deploymentName,
-                            'limit_servers' => [$selectedServers]
+                            'limit_servers' => [$selectedServers],
                         ];
                     }
                 } else {
                     $targetDeployments[] = [
                         'name' => $deploymentName,
-                        'limit_servers' => []
+                        'limit_servers' => [],
                     ];
                 }
             }
@@ -151,8 +151,8 @@ class PublishDeploymentScript extends Command
         // 3. Ensure Output Directory Exists
         $outputDir = config('self-deploy.deployment_scripts_path') ?? base_path();
 
-        if (!File::exists($outputDir)) {
-            if (!File::makeDirectory($outputDir, 0755, true)) {
+        if (! File::exists($outputDir)) {
+            if (! File::makeDirectory($outputDir, 0755, true)) {
                 $this->error("Failed to create directory: {$outputDir}");
 
                 return Command::FAILURE;
@@ -172,7 +172,7 @@ class PublishDeploymentScript extends Command
             $name = $target['name'];
             $limitServers = $target['limit_servers'];
 
-            if (!$this->generateScript($name, $deployments[$name], $outputDir, $limitServers)) {
+            if (! $this->generateScript($name, $deployments[$name], $outputDir, $limitServers)) {
                 $hasErrors = true;
             }
         }
@@ -188,7 +188,7 @@ class PublishDeploymentScript extends Command
             $hasErrors = false;
             foreach ($configData as $serverKey => $serverConfig) {
                 // Check if we should skip this server based on limitServers
-                if (!empty($limitServers) && !in_array($serverKey, $limitServers)) {
+                if (! empty($limitServers) && ! in_array($serverKey, $limitServers)) {
                     continue;
                 }
 
@@ -197,11 +197,12 @@ class PublishDeploymentScript extends Command
                 // The output script should also probably be server-specific
                 $scriptName = "{$name}-{$serverKey}";
 
-                if (!$this->renderAndSave($scriptName, $templateName, $serverConfig, $outputDir)) {
+                if (! $this->renderAndSave($scriptName, $templateName, $serverConfig, $outputDir)) {
                     $hasErrors = true;
                 }
             }
-            return !$hasErrors;
+
+            return ! $hasErrors;
         }
 
         return $this->renderAndSave($name, $name, $configData, $outputDir);
@@ -226,20 +227,23 @@ class PublishDeploymentScript extends Command
                 try {
                     $content = view()->file(resource_path('deployments/base.blade.php'), $viewData)->render();
                 } catch (\Exception $ex) {
-                    $this->error("Error rendering template for [{$scriptName}]: " . $ex->getMessage());
+                    $this->error("Error rendering template for [{$scriptName}]: ".$ex->getMessage());
+
                     return false;
                 }
             } else {
-                $this->error("Error rendering template for [{$scriptName}]: " . $e->getMessage());
+                $this->error("Error rendering template for [{$scriptName}]: ".$e->getMessage());
+
                 return false;
             }
         }
 
         $filename = "{$scriptName}.sh";
-        $path = $outputDir . DIRECTORY_SEPARATOR . $filename;
+        $path = $outputDir.DIRECTORY_SEPARATOR.$filename;
 
         if (File::put($path, $content) === false) {
             $this->error("Failed to write to {$path}");
+
             return false;
         }
 

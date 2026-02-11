@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [v1.5.4] - 2026-02-11
+
+### Added
+- **New Logging Helper**: Added `log_cmd()` helper function to `base.blade.php` for cleaner command logging (useful for systemctl commands).
+- **Improved Formatting**: enhancing readability of the base deployment script template.
+
 ## [v1.5.3] - 2026-02-11
 
 ### Added
