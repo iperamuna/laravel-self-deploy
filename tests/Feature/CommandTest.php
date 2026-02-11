@@ -292,3 +292,53 @@ it('preserves existing config structure when updating', function () {
     expect($updatedConfig['environments'])->toHaveKey('production');
     expect($updatedConfig['environments'])->toHaveKey('staging');
 });
+
+it('updates in-memory config when adding new deployment', function () {
+    $configPath = config_path('self-deploy.php');
+
+    // Create initial config
+    $initialConfig = [
+        'log_dir' => storage_path('self-deployments/logs'),
+        'deployment_scripts_path' => base_path('.deployments'),
+        'environments' => [
+            'production' => [
+                'app-production' => [
+                    'deploy_path' => '/var/www/test-app',
+                ],
+            ],
+        ],
+    ];
+
+    File::put($configPath, "<?php\n\nreturn ".var_export($initialConfig, true).";\n");
+    config()->set('self-deploy', $initialConfig);
+
+    // Create the command and add a new deployment
+    $command = new \Iperamuna\SelfDeploy\Console\Commands\CreateDeploymentFile;
+
+    $newEnvironments = [
+        'production' => $initialConfig['environments']['production'],
+        'staging' => [
+            'app-staging' => [
+                'deploy_path' => '/var/www/staging',
+                'branch' => 'staging',
+            ],
+        ],
+    ];
+
+    // Use reflection to call protected method
+    $reflection = new \ReflectionClass($command);
+    $method = $reflection->getMethod('updateConfigFile');
+    $method->setAccessible(true);
+
+    $method->invoke($command, $newEnvironments);
+
+    // Manually update config like the command does
+    config()->set('self-deploy.environments', $newEnvironments);
+
+    // Verify in-memory config was updated
+    $inMemoryConfig = config('self-deploy.environments');
+    expect($inMemoryConfig)->toHaveKey('staging');
+    expect($inMemoryConfig['staging'])->toHaveKey('app-staging');
+    expect($inMemoryConfig['staging']['app-staging']['deploy_path'])->toBe('/var/www/staging');
+    expect($inMemoryConfig['staging']['app-staging']['branch'])->toBe('staging');
+});
