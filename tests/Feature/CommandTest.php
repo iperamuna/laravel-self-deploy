@@ -7,9 +7,9 @@ it('can create deployment file', function () {
 
     $this->artisan('selfdeploy:create-deployment-file', [
         '--deployment-name' => 'app-production',
-        '--environment' => 'production'
+        '--environment' => 'production',
     ])
-        ->expectsOutput('Deployment file created successfully at: ' . resource_path('deployments/app-production.blade.php'))
+        ->expectsOutput('Deployment file created successfully at: '.resource_path('deployments/app-production.blade.php'))
         ->assertExitCode(0);
 
     expect(File::exists(resource_path('deployments/app-production.blade.php')))->toBeTrue();
@@ -21,19 +21,20 @@ it('can create deployment file', function () {
 it('can publish deployment scripts', function () {
     // Setup a mock blade file first
     $bladePath = resource_path('deployments/app-production.blade.php');
-    if (!File::exists(dirname($bladePath)))
+    if (! File::exists(dirname($bladePath))) {
         File::makeDirectory(dirname($bladePath), 0755, true);
+    }
     File::put($bladePath, 'echo "Deploying {{ $deploy_path }}"');
 
     $this->artisan('selfdeploy:publish-deployment-scripts', [
         'deployment-name' => 'app-production',
         '--environment' => 'production',
-        '--force' => true
+        '--force' => true,
     ])
-        ->expectsOutput('Deployment script created: ' . config('self-deploy.deployment_scripts_path') . '/app-production.sh')
+        ->expectsOutput('Deployment script created: '.config('self-deploy.deployment_scripts_path').'/app-production.sh')
         ->assertExitCode(0);
 
-    $scriptPath = config('self-deploy.deployment_scripts_path') . '/app-production.sh';
+    $scriptPath = config('self-deploy.deployment_scripts_path').'/app-production.sh';
     expect(File::exists($scriptPath))->toBeTrue();
     expect(File::get($scriptPath))->toContain('/var/www/test-app');
 
@@ -54,12 +55,12 @@ it('can publish all deployment scripts', function () {
     $this->artisan('selfdeploy:publish-deployment-scripts', [
         '--all' => true,
         '--environment' => 'production',
-        '--force' => true
+        '--force' => true,
     ])
         ->assertExitCode(0);
 
-    expect(File::exists(config('self-deploy.deployment_scripts_path') . '/app-production.sh'))->toBeTrue();
-    expect(File::exists(config('self-deploy.deployment_scripts_path') . '/app-worker.sh'))->toBeTrue();
+    expect(File::exists(config('self-deploy.deployment_scripts_path').'/app-production.sh'))->toBeTrue();
+    expect(File::exists(config('self-deploy.deployment_scripts_path').'/app-worker.sh'))->toBeTrue();
 
     // Cleanup
     File::delete($bladePath1);

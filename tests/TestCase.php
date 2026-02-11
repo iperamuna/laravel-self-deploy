@@ -30,17 +30,17 @@ class TestCase extends Orchestra
                     'deploy_path' => '/var/www/test-app',
                     'blue_service' => 'test-blue.service',
                     'green_service' => 'test-green.service',
-                ]
+                ],
             ],
             'staging' => [
                 'app-staging' => [
                     'deploy_path' => '/var/www/test-staging',
-                ]
-            ]
+                ],
+            ],
         ]);
 
         // Define temp paths for tests
-        $deploymentsPath = __DIR__ . '/temp/deployments';
+        $deploymentsPath = __DIR__.'/temp/deployments';
         config()->set('self-deploy.deployment_scripts_path', $deploymentsPath);
 
         // Ensure clean slate
@@ -54,8 +54,8 @@ class TestCase extends Orchestra
     {
         parent::tearDown();
 
-        if (File::exists(__DIR__ . '/temp')) {
-            File::deleteDirectory(__DIR__ . '/temp');
+        if (File::exists(__DIR__.'/temp')) {
+            File::deleteDirectory(__DIR__.'/temp');
         }
     }
 }
