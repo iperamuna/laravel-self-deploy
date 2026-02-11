@@ -5,8 +5,8 @@ namespace Iperamuna\SelfDeploy\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\View;
+
 use function Laravel\Prompts\select;
-use function Laravel\Prompts\text;
 
 class PublishDeploymentScript extends Command
 {
@@ -60,6 +60,7 @@ class PublishDeploymentScript extends Command
 
         if (empty($deployments)) {
             $this->error("No deployments found for environment [{$env}].");
+
             return Command::FAILURE;
         }
 
@@ -85,6 +86,7 @@ class PublishDeploymentScript extends Command
             } else {
                 if (!isset($deployments[$deploymentName])) {
                     $this->error("Deployment [{$deploymentName}] not configured in environment [{$env}].");
+
                     return Command::FAILURE;
                 }
                 $targetDeployments[] = $deploymentName;
@@ -97,6 +99,7 @@ class PublishDeploymentScript extends Command
         if (!File::exists($outputDir)) {
             if (!File::makeDirectory($outputDir, 0755, true)) {
                 $this->error("Failed to create directory: {$outputDir}");
+
                 return Command::FAILURE;
             }
             $this->info("Created directory: {$outputDir}");
@@ -148,10 +151,12 @@ class PublishDeploymentScript extends Command
                     $content = view()->file(resource_path('deployments/base.blade.php'), $viewData)->render();
                 } catch (\Exception $ex) {
                     $this->error("Error rendering template for [{$name}]: " . $ex->getMessage());
+
                     return false;
                 }
             } else {
                 $this->error("Error rendering template for [{$name}]: " . $e->getMessage());
+
                 return false;
             }
         }
@@ -161,16 +166,18 @@ class PublishDeploymentScript extends Command
 
         if (File::put($path, $content) === false) {
             $this->error("Failed to write to {$path}");
+
             return false;
         }
 
         // Make executable
         chmod($path, 0755);
 
-        // Run sudo chmod +x as requested
-        exec("sudo chmod +x {$path}");
+        // Run sudo chmod +x as requested - REMOVED for better portability and testability
+        // exec("sudo chmod +x {$path}");
 
         $this->info("Deployment script created: {$path}");
+
         return true;
     }
 }

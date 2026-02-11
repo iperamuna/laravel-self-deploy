@@ -30,8 +30,8 @@ return [
                 'deploy_path' => '/var/www/iperamuna-web',
 
                 'branch' => 'FR-HTML',
-            ]
-        ]
+            ],
+        ],
     ],
 
 ];

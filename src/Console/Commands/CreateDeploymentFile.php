@@ -4,6 +4,7 @@ namespace Iperamuna\SelfDeploy\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\warning;
 
@@ -37,11 +38,12 @@ class CreateDeploymentFile extends Command
 
         if (empty($configs)) {
             $this->error('No environments configured in config/self-deploy.php');
+
             return Command::FAILURE;
         }
 
         // 1. Select Environment if missing
-        if (!$environment) {
+        if (! $environment) {
             $environment = select(
                 label: 'Select Environment',
                 options: array_keys($configs),
@@ -49,8 +51,9 @@ class CreateDeploymentFile extends Command
             );
         }
 
-        if (!isset($configs[$environment])) {
+        if (! isset($configs[$environment])) {
             $this->error("Environment [{$environment}] not found in config.");
+
             return Command::FAILURE;
         }
 
@@ -58,11 +61,12 @@ class CreateDeploymentFile extends Command
 
         if (empty($deployments)) {
             $this->error("No deployments found for environment [{$environment}].");
+
             return Command::FAILURE;
         }
 
         // 2. Select Deployment if missing
-        if (!$deploymentName) {
+        if (! $deploymentName) {
             $deploymentName = select(
                 label: 'Select Deployment configuration',
                 options: array_keys($deployments),
@@ -70,8 +74,9 @@ class CreateDeploymentFile extends Command
             );
         }
 
-        if (!isset($deployments[$deploymentName])) {
+        if (! isset($deployments[$deploymentName])) {
             $this->error("Deployment [{$deploymentName}] not found in environment [{$environment}].");
+
             return Command::FAILURE;
         }
 
@@ -83,7 +88,7 @@ class CreateDeploymentFile extends Command
         }
 
         $directory = resource_path('deployments'); // Keep as resource path for project customization
-        if (!File::exists($directory)) {
+        if (! File::exists($directory)) {
             File::makeDirectory($directory, 0755, true);
         }
 
@@ -91,8 +96,9 @@ class CreateDeploymentFile extends Command
 
         if (File::exists($path)) {
             warning("File [{$path}] already exists!");
-            if (!$this->confirm('Do you want to overwrite it? All existing content will be lost.')) {
+            if (! $this->confirm('Do you want to overwrite it? All existing content will be lost.')) {
                 $this->info('Operation cancelled.');
+
                 return Command::SUCCESS;
             }
         }

@@ -29,7 +29,7 @@ class SelfDeploy extends Command
     public function handle()
     {
         if ($this->option('publish')) {
-            $this->info("Publishing deployment scripts...");
+            $this->info('Publishing deployment scripts...');
             $exitCode = $this->call('selfdeploy:publish-deployment-scripts', [
                 '--all' => true,
                 '--force' => true,
@@ -37,29 +37,33 @@ class SelfDeploy extends Command
 
             if ($exitCode !== Command::SUCCESS) {
                 $this->error('Failed to publish deployment scripts. Aborting deployment.');
+
                 return Command::FAILURE;
             }
         }
 
         $scriptsPath = config('self-deploy.deployment_scripts_path');
 
-        if (!$scriptsPath || !File::exists($scriptsPath)) {
+        if (! $scriptsPath || ! File::exists($scriptsPath)) {
             $this->error("Deployment scripts path not configured or does not exist: {$scriptsPath}");
+
             return Command::FAILURE;
         }
 
         $files = File::files($scriptsPath);
-        $shFiles = array_filter($files, fn($file) => $file->getExtension() === 'sh');
+        $shFiles = array_filter($files, fn ($file) => $file->getExtension() === 'sh');
 
         if (empty($shFiles)) {
             $this->info("No .sh files found in {$scriptsPath}");
+
             return Command::SUCCESS;
         }
 
-        $this->info("Found " . count($shFiles) . " deployment script(s).");
+        $this->info('Found '.count($shFiles).' deployment script(s).');
 
-        if (!$this->option('force') && !$this->confirm('Do you wish to run all these deployment scripts?')) {
+        if (! $this->option('force') && ! $this->confirm('Do you wish to run all these deployment scripts?')) {
             $this->info('Operation cancelled.');
+
             return Command::SUCCESS;
         }
 
@@ -79,10 +83,10 @@ class SelfDeploy extends Command
 
             exec($command);
 
-            $this->line("  -> Started in background.");
+            $this->line('  -> Started in background.');
         }
 
-        $this->info("All scripts triggered.");
+        $this->info('All scripts triggered.');
 
         return Command::SUCCESS;
     }
