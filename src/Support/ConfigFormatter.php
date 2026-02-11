@@ -23,8 +23,8 @@ class ConfigFormatter
             $output .= $nextIndentStr;
 
             $output .= is_string($key)
-                ? "'" . addslashes($key) . "' => "
-                : $key . ' => ';
+                ? "'".addslashes($key)."' => "
+                : $key.' => ';
 
             if (is_array($value)) {
                 $output .= self::format($value, $indent + 1);
@@ -36,7 +36,7 @@ class ConfigFormatter
                 } elseif ($key === 'deployment_scripts_path' && $value === base_path('.deployments')) {
                     $output .= "base_path('.deployments')";
                 } else {
-                    $output .= "'" . addslashes($value) . "'";
+                    $output .= "'".addslashes($value)."'";
                 }
             } elseif (is_bool($value)) {
                 $output .= $value ? 'true' : 'false';
@@ -53,7 +53,7 @@ class ConfigFormatter
             }
         }
 
-        $output .= "\n" . $indentStr . ']';
+        $output .= "\n".$indentStr.']';
 
         return $output;
     }

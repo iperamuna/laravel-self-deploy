@@ -37,6 +37,7 @@ return [
         'io_scheduling_class' => 'best-effort', // idle, best-effort, real-time
         'io_scheduling_priority' => 7,
         'collect' => true,
+        'user' => env('SELF_DEPLOY_USER'), // Optional: Run the systemd unit as a specific user
     ],
 
 ];

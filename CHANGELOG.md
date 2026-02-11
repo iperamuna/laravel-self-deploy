@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.5.6] - 2026-02-11
+
+### Added
+- **Systemd User Configuration**: Added support for specifying a `user` in `config/self-deploy.php` (under `systemd`) to run the transient service as a specific user (e.g., `navissadmin`).
+- **Environment Variable Support**: default configuration now supports `SELF_DEPLOY_USER` in `.env` for easier setup.
+
 ## [v1.5.5] - 2026-02-11
 
 ### Fixed
