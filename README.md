@@ -53,12 +53,78 @@ return [
 
 ### 1. Create a Deployment Configuration File
 
-Create a Blade template for a specific deployment configuration. This file will be populated with the variables defined in your config.
+Create a Blade template for a specific deployment configuration. This command now supports **interactive environment and deployment creation**.
+
+#### Interactive Mode (Recommended)
 
 ```bash
 php artisan selfdeploy:create-deployment-file
 ```
-Follow the prompts to select an environment and deployment name.
+
+The command will guide you through:
+1. **Select or Add Environment**: Choose an existing environment or create a new one
+2. **Select or Add Deployment**: Choose an existing deployment configuration or create a new one
+3. **Add Config Keys** (if creating new): Dynamically add key-value pairs for your deployment
+   - Enter config key name (e.g., `deploy_path`, `branch`, `service`)
+   - Enter default value (blank values accepted as empty strings)
+   - Press `d` to finish adding keys
+4. **Generate Bash Script**: Optionally generate the deployment script immediately
+
+#### Non-Interactive Mode
+
+You can also pass options directly:
+
+```bash
+php artisan selfdeploy:create-deployment-file --environment=production --deployment-name=app-production
+```
+
+**Example: Creating a New Environment and Deployment Interactively**
+
+```
+❯ php artisan selfdeploy:create-deployment-file
+
+ ┌ Select Environment or Add New ──────────────────────────┐
+ │ › + Add New Environment                                  │
+ │   production                                             │
+ └──────────────────────────────────────────────────────────┘
+
+ ┌ Enter new environment name ─────────────────────────────┐
+ │ staging                                                  │
+ └──────────────────────────────────────────────────────────┘
+
+ ┌ Enter deployment configuration name ────────────────────┐
+ │ app-staging                                              │
+ └──────────────────────────────────────────────────────────┘
+
+   INFO  Enter configuration key-value pairs. Press "d" to finish.
+
+ ┌ Config Key (or "d" to done) ────────────────────────────┐
+ │ deploy_path                                              │
+ └──────────────────────────────────────────────────────────┘
+
+ ┌ Default value for [deploy_path] ────────────────────────┐
+ │ /var/www/staging                                         │
+ └──────────────────────────────────────────────────────────┘
+
+ ┌ Config Key (or "d" to done) ────────────────────────────┐
+ │ branch                                                   │
+ └──────────────────────────────────────────────────────────┘
+
+ ┌ Default value for [branch] ─────────────────────────────┐
+ │ staging                                                  │
+ └──────────────────────────────────────────────────────────┘
+
+ ┌ Config Key (or "d" to done) ────────────────────────────┐
+ │ d                                                        │
+ └──────────────────────────────────────────────────────────┘
+
+   INFO  Deployment configuration [app-staging] added to [staging].
+   INFO  Deployment file created successfully at: resources/deployments/app-staging.blade.php
+
+ ┌ Do you want to generate the Bash script now? ───────────┐
+ │ Yes                                                      │
+ └──────────────────────────────────────────────────────────┘
+```
 
 ### 2. Publish (Generate) Deployment Scripts
 

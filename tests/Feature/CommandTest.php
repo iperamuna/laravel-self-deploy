@@ -2,20 +2,162 @@
 
 use Illuminate\Support\Facades\File;
 
-it('can create deployment file', function () {
-    File::delete(resource_path('deployments/app-production.blade.php'));
+beforeEach(function () {
+    // Reset config to initial state before each test
+    config()->set('self-deploy.environments', [
+        'production' => [
+            'app-production' => [
+                'deploy_path' => '/var/www/test-app',
+            ],
+            'app-frontend' => [
+                'deploy_path' => '/var/www/test-frontend',
+                'branch' => 'main',
+            ],
+        ],
+    ]);
+});
 
+afterEach(function () {
+    // Cleanup any created files
+    $paths = [
+        resource_path('deployments'),
+        config('self-deploy.deployment_scripts_path'),
+    ];
+
+    foreach ($paths as $path) {
+        if (File::exists($path)) {
+            File::deleteDirectory($path, true);
+        }
+    }
+});
+
+it('can create deployment file with options', function () {
     $this->artisan('selfdeploy:create-deployment-file', [
         '--deployment-name' => 'app-production',
         '--environment' => 'production',
     ])
+        ->expectsConfirmation('Do you want to generate the Bash script now?', 'no')
         ->expectsOutput('Deployment file created successfully at: '.resource_path('deployments/app-production.blade.php'))
         ->assertExitCode(0);
 
     expect(File::exists(resource_path('deployments/app-production.blade.php')))->toBeTrue();
 
-    // Cleanup resource path created during test
-    File::delete(resource_path('deployments/app-production.blade.php'));
+    $content = File::get(resource_path('deployments/app-production.blade.php'));
+    expect($content)->toContain('{{ $deploy_path }}');
+});
+
+it('fails when environment not found', function () {
+    $this->artisan('selfdeploy:create-deployment-file', [
+        '--deployment-name' => 'app-production',
+        '--environment' => 'nonexistent',
+    ])
+        ->expectsOutput('Environment [nonexistent] not found in config.')
+        ->assertExitCode(1);
+});
+
+it('fails when deployment not found in environment', function () {
+    $this->artisan('selfdeploy:create-deployment-file', [
+        '--deployment-name' => 'nonexistent',
+        '--environment' => 'production',
+    ])
+        ->expectsOutput('Deployment [nonexistent] not found in environment [production].')
+        ->assertExitCode(1);
+});
+
+it('prompts for overwrite when file exists', function () {
+    // Create file first
+    $path = resource_path('deployments/app-production.blade.php');
+    File::ensureDirectoryExists(dirname($path));
+    File::put($path, 'existing content');
+
+    $this->artisan('selfdeploy:create-deployment-file', [
+        '--deployment-name' => 'app-production',
+        '--environment' => 'production',
+    ])
+        ->expectsConfirmation('Do you want to overwrite it? All existing content will be lost.', 'no')
+        ->expectsOutput('Operation cancelled.')
+        ->assertExitCode(0);
+
+    // File should still have old content
+    expect(File::get($path))->toBe('existing content');
+});
+
+it('overwrites file when confirmed', function () {
+    // Create file first
+    $path = resource_path('deployments/app-production.blade.php');
+    File::ensureDirectoryExists(dirname($path));
+    File::put($path, 'existing content');
+
+    $this->artisan('selfdeploy:create-deployment-file', [
+        '--deployment-name' => 'app-production',
+        '--environment' => 'production',
+    ])
+        ->expectsConfirmation('Do you want to overwrite it? All existing content will be lost.', 'yes')
+        ->expectsConfirmation('Do you want to generate the Bash script now?', 'no')
+        ->expectsOutput('Deployment file created successfully at: '.resource_path('deployments/app-production.blade.php'))
+        ->assertExitCode(0);
+
+    // File should have new content
+    $content = File::get($path);
+    expect($content)->not()->toBe('existing content');
+    expect($content)->toContain('{{ $deploy_path }}');
+});
+
+it('generates bash script when confirmed', function () {
+    $this->artisan('selfdeploy:create-deployment-file', [
+        '--deployment-name' => 'app-production',
+        '--environment' => 'production',
+    ])
+        ->expectsConfirmation('Do you want to generate the Bash script now?', 'yes')
+        ->assertExitCode(0);
+
+    expect(File::exists(resource_path('deployments/app-production.blade.php')))->toBeTrue();
+    expect(File::exists(config('self-deploy.deployment_scripts_path').'/app-production.sh'))->toBeTrue();
+});
+
+it('creates directory if it does not exist', function () {
+    $deploymentDir = resource_path('deployments');
+
+    // Ensure directory doesn't exist
+    if (File::exists($deploymentDir)) {
+        File::deleteDirectory($deploymentDir);
+    }
+
+    expect(File::exists($deploymentDir))->toBeFalse();
+
+    $this->artisan('selfdeploy:create-deployment-file', [
+        '--deployment-name' => 'app-production',
+        '--environment' => 'production',
+    ])
+        ->expectsConfirmation('Do you want to generate the Bash script now?', 'no')
+        ->assertExitCode(0);
+
+    expect(File::exists($deploymentDir))->toBeTrue();
+    expect(File::isDirectory($deploymentDir))->toBeTrue();
+});
+
+it('includes all config values in blade file', function () {
+    // Add a deployment with multiple config values
+    config()->set('self-deploy.environments.production.test-deployment', [
+        'deploy_path' => '/var/www/test',
+        'branch' => 'main',
+        'service' => 'test.service',
+        'port' => '8000',
+    ]);
+
+    $this->artisan('selfdeploy:create-deployment-file', [
+        '--deployment-name' => 'test-deployment',
+        '--environment' => 'production',
+    ])
+        ->expectsConfirmation('Do you want to generate the Bash script now?', 'no')
+        ->assertExitCode(0);
+
+    $content = File::get(resource_path('deployments/test-deployment.blade.php'));
+
+    expect($content)->toContain('{{ $deploy_path }}')
+        ->toContain('{{ $branch }}')
+        ->toContain('{{ $service }}')
+        ->toContain('{{ $port }}');
 });
 
 it('can publish deployment scripts', function () {
@@ -37,9 +179,6 @@ it('can publish deployment scripts', function () {
     $scriptPath = config('self-deploy.deployment_scripts_path').'/app-production.sh';
     expect(File::exists($scriptPath))->toBeTrue();
     expect(File::get($scriptPath))->toContain('/var/www/test-app');
-
-    // Cleanup
-    File::delete($bladePath);
 });
 
 it('can publish all deployment scripts', function () {
@@ -61,8 +200,95 @@ it('can publish all deployment scripts', function () {
 
     expect(File::exists(config('self-deploy.deployment_scripts_path').'/app-production.sh'))->toBeTrue();
     expect(File::exists(config('self-deploy.deployment_scripts_path').'/app-worker.sh'))->toBeTrue();
+});
 
-    // Cleanup
-    File::delete($bladePath1);
-    File::delete($bladePath2);
+it('makes published scripts executable', function () {
+    $bladePath = resource_path('deployments/app-production.blade.php');
+    File::put($bladePath, 'echo "Deploying"');
+
+    $this->artisan('selfdeploy:publish-deployment-scripts', [
+        'deployment-name' => 'app-production',
+        '--environment' => 'production',
+        '--force' => true,
+    ])->assertExitCode(0);
+
+    $scriptPath = config('self-deploy.deployment_scripts_path').'/app-production.sh';
+
+    expect(File::exists($scriptPath))->toBeTrue();
+
+    // Check if file is executable (on Unix systems)
+    if (PHP_OS_FAMILY !== 'Windows') {
+        expect(is_executable($scriptPath))->toBeTrue();
+    }
+});
+
+it('handles empty config values gracefully', function () {
+    config()->set('self-deploy.environments.production.empty-deployment', [
+        'deploy_path' => '',
+        'branch' => '',
+    ]);
+
+    $this->artisan('selfdeploy:create-deployment-file', [
+        '--deployment-name' => 'empty-deployment',
+        '--environment' => 'production',
+    ])
+        ->expectsConfirmation('Do you want to generate the Bash script now?', 'no')
+        ->assertExitCode(0);
+
+    expect(File::exists(resource_path('deployments/empty-deployment.blade.php')))->toBeTrue();
+
+    $content = File::get(resource_path('deployments/empty-deployment.blade.php'));
+    expect($content)->toContain('{{ $deploy_path }}')
+        ->toContain('{{ $branch }}');
+});
+
+it('preserves existing config structure when updating', function () {
+    $configPath = config_path('self-deploy.php');
+
+    // Manually create a proper config file
+    $initialConfig = [
+        'log_dir' => storage_path('self-deployments/logs'),
+        'deployment_scripts_path' => base_path('.deployments'),
+        'environments' => [
+            'production' => [
+                'app-production' => [
+                    'deploy_path' => '/var/www/test-app',
+                ],
+            ],
+        ],
+    ];
+
+    File::put($configPath, "<?php\n\nreturn ".var_export($initialConfig, true).";\n");
+
+    $command = new \Iperamuna\SelfDeploy\Console\Commands\CreateDeploymentFile;
+
+    $newEnvironments = [
+        'production' => $initialConfig['environments']['production'],
+        'staging' => [
+            'app-staging' => [
+                'deploy_path' => '/var/www/staging',
+            ],
+        ],
+    ];
+
+    // Use reflection to call protected method
+    $reflection = new \ReflectionClass($command);
+    $method = $reflection->getMethod('updateConfigFile');
+    $method->setAccessible(true);
+
+    $method->invoke($command, $newEnvironments);
+
+    // Verify the config file exists and has correct structure
+    expect(File::exists($configPath))->toBeTrue();
+
+    $updatedConfig = include $configPath;
+
+    // Verify original keys are preserved
+    expect($updatedConfig)->toHaveKey('log_dir');
+    expect($updatedConfig)->toHaveKey('deployment_scripts_path');
+    expect($updatedConfig)->toHaveKey('environments');
+
+    // Verify environments were updated
+    expect($updatedConfig['environments'])->toHaveKey('production');
+    expect($updatedConfig['environments'])->toHaveKey('staging');
 });
