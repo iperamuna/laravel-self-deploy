@@ -1,0 +1,29 @@
+{
+    "name": "iperamuna/laravel-self-deploy",
+    "description": "Simple self-deployment scripts and commands for Laravel applications.",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Indunil Peramuna",
+            "email": "iperamuna@gmail.com",
+            "homepage": "https://github.com/iperamuna"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Iperamuna\\SelfDeploy\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Iperamuna\\SelfDeploy\\SelfDeployServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "illuminate/support": "^11.0|^12.0",
+        "illuminate/console": "^11.0|^12.0",
+        "laravel/prompts": "^0.1|^0.2|^0.3|^1.0"
+    }
+}

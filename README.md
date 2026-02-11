@@ -1,0 +1,87 @@
+# Laravel Self Deploy
+
+A simple, opinionated Laravel package for managing self-hosted "Blue/Green" style deployments using Artisan commands and shell scripts. It allows you to define deployment configurations in a config file, generate deployment artifacts (Blade templates -> Shell scripts), and trigger them locally or on a server.
+
+## Features
+
+- **Configuration-driven**: Define your environments (e.g., `production`, `staging`) and deployments in `config/self-deploy.php`.
+- **Blade-powered Scripts**: Uses Blade templates for your shell scripts, allowing you to inject config variables (like paths, service names) dynamically.
+- **Artifact Generation**: Compiles Blade templates into executable `.sh` files.
+- **Deployment Trigger**: Run all generated deployment scripts in the background via a single Artisan command.
+- **Blue/Green Ready**: The default template is set up for a Blue/Green deployment strategy using Systemd and Nginx upstream switching.
+
+## Installation
+
+You can install the package via composer:
+
+```bash
+composer require iperamuna/laravel-self-deploy
+```
+
+Publish the configuration and base view:
+
+```bash
+php artisan vendor:publish --tag=self-deploy-config
+php artisan vendor:publish --tag=self-deploy-views
+```
+
+## Configuration
+
+Edit `config/self-deploy.php` to define your environments and deployments.
+
+```php
+return [
+    'deployment_scripts_path' => base_path('.deployments'),
+    'environments' => [
+        'production' => [
+             'app-production' => [
+                 'deploy_path' => '/var/www/my-app',
+                 'blue_service' => 'my-app-blue.service',
+                 'green_service' => 'my-app-green.service',
+                 // ... other custom variables for your script
+             ]
+        ]
+    ]
+];
+```
+
+## Usage
+
+### 1. Create a Deployment Configuration File
+
+Create a Blade template for a specific deployment configuration. This file will be populated with the variables defined in your config.
+
+```bash
+php artisan selfdeploy:create-deployment-file
+```
+Follow the prompts to select an environment and deployment name.
+
+### 2. Publish (Generate) Deployment Scripts
+
+Compile your Blade templates into executable `.sh` scripts in your configured `deployment_scripts_path`.
+
+```bash
+# Interactive
+php artisan selfdeploy:publish-deployment-scripts
+
+# All deployments in production
+php artisan selfdeploy:publish-deployment-scripts --all --environment=production --force
+```
+
+### 3. Run Deployments
+
+Trigger all `.sh` scripts found in your `deployment_scripts_path` directory.
+
+```bash
+php artisan selfdeploy:run
+```
+
+To automatically regenerate scripts before running:
+
+```bash
+php artisan selfdeploy:run --publish
+```
+
+## License
+
+The MIT License (MIT). Please see [License File](LICENSE) for more information.
