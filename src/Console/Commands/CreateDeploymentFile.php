@@ -4,6 +4,7 @@ namespace Iperamuna\SelfDeploy\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Iperamuna\SelfDeploy\Support\ConfigFormatter;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\select;
@@ -93,6 +94,9 @@ class CreateDeploymentFile extends Command
 
                 // Save to config file
                 $this->updateConfigFile($configs);
+
+                // Update in-memory config so subsequent commands (like bash generation) see the new config
+                config()->set('self-deploy.environments', $configs);
 
                 $this->info("Deployment configuration [{$deploymentName}] added to [{$environment}].");
             }
@@ -197,37 +201,8 @@ class CreateDeploymentFile extends Command
         // Update only the environments key
         $existingConfig['environments'] = $configs;
 
-        $content = "<?php\n\nreturn ".$this->varExport($existingConfig).";\n";
+        $content = "<?php\n\nreturn ".ConfigFormatter::format($existingConfig).";\n";
 
         File::put($configPath, $content);
-    }
-
-    /**
-     * Custom var_export that formats arrays nicely.
-     */
-    protected function varExport(array $array, int $level = 0): string
-    {
-        $indent = str_repeat('    ', $level);
-        $result = "[\n";
-
-        foreach ($array as $key => $value) {
-            $result .= $indent.'    '.var_export($key, true).' => ';
-
-            if (is_array($value)) {
-                $result .= $this->varExport($value, $level + 1);
-            } else {
-                $result .= var_export($value, true);
-            }
-
-            $result .= ",\n";
-        }
-
-        if ($level > 0) {
-            $result .= $indent.']';
-        } else {
-            $result .= ']';
-        }
-
-        return $result;
     }
 }

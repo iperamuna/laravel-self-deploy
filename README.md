@@ -13,6 +13,7 @@ A simple, opinionated Laravel package for managing self-hosted "Blue/Green" styl
 - **Artifact Generation**: Compiles Blade templates into executable `.sh` files.
 - **Deployment Trigger**: Run all generated deployment scripts in the background via a single Artisan command.
 - **Blue/Green Ready**: The default template is set up for a Blue/Green deployment strategy using Systemd and Nginx upstream switching.
+- **Pretty Configuration**: Automatically formats your `config/self-deploy.php` with double-newline spacing for maximum readability when adding new environments or deployments.
 
 ## Installation
 

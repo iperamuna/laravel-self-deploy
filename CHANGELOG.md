@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.3.0] - 2026-02-11
+
+### Added
+- **Config Formatter Utility**: Added `Iperamuna\SelfDeploy\Support\ConfigFormatter` to handle sophisticated PHP array formatting.
+- **Improved Config Spacing**: Updated configuration file updates to use a "pretty" format with double-newline spacing between keys for maximum readability.
+
+### Changed
+- Refactored `CreateDeploymentFile` command to delegate array formatting to the new `ConfigFormatter` utility.
+- Integrated comprehensive unit tests for the formatting logic.
+- Total tests: 17 passing (63 assertions) ✅
+
 ## [v1.2.1] - 2026-02-11
 
 ### Changed
