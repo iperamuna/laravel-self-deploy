@@ -19,24 +19,24 @@ sudo mkdir -p "$LOG_DIR"
 exec > >(sudo tee -a "$LOG_FILE") 2>&1
 
 log() {
-  echo "[$(date '+%F %T')] $*"
+echo "[$(date '+%F %T')] $*"
 }
 
 log_cmd() {
-  log "CMD: $*"
-  "$@"
+log "CMD: $*"
+"$@"
 }
 
 run() {
-  log "RUN: $*"
-  "$@"
+log "RUN: $*"
+"$@"
 }
 
 # ------------------------
 # Start deploy
 # ------------------------
 
-log "==== laravel-app deployment started ===="
+log "==== {{ $script }} deployment started ===="
 log "Log file: $LOG_FILE"
 
 cd "$APP_DIR"
