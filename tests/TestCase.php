@@ -42,15 +42,15 @@ class TestCase extends Orchestra
         ]);
 
         // Define temp paths for tests
-        $scriptsPath = __DIR__ . '/temp/scripts';
-        $configsPath = __DIR__ . '/temp/configs';
+        $scriptsPath = __DIR__.'/temp/scripts';
+        $configsPath = __DIR__.'/temp/configs';
 
         config()->set('self-deploy.deployment_scripts_path', $scriptsPath);
         config()->set('self-deploy.deployment_configurations_path', $configsPath);
 
         // Ensure clean slate
-        if (File::exists(__DIR__ . '/temp')) {
-            File::deleteDirectory(__DIR__ . '/temp');
+        if (File::exists(__DIR__.'/temp')) {
+            File::deleteDirectory(__DIR__.'/temp');
         }
         File::makeDirectory($scriptsPath, 0755, true);
         File::makeDirectory($configsPath, 0755, true);
@@ -60,8 +60,8 @@ class TestCase extends Orchestra
     {
         parent::tearDown();
 
-        if (File::exists(__DIR__ . '/temp')) {
-            File::deleteDirectory(__DIR__ . '/temp');
+        if (File::exists(__DIR__.'/temp')) {
+            File::deleteDirectory(__DIR__.'/temp');
         }
     }
 }

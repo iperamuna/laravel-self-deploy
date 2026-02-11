@@ -14,11 +14,11 @@ class SelfDeployServiceProvider extends ServiceProvider
         // Load Config
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__ . '/../config/self-deploy.php' => config_path('self-deploy.php'),
+                __DIR__.'/../config/self-deploy.php' => config_path('self-deploy.php'),
             ], 'self-deploy-config');
 
             $this->publishes([
-                __DIR__ . '/../resources/views' => resource_path('views/vendor/self-deploy'),
+                __DIR__.'/../resources/views' => resource_path('views/vendor/self-deploy'),
             ], 'self-deploy-views');
 
             // Register Commands
@@ -31,7 +31,7 @@ class SelfDeployServiceProvider extends ServiceProvider
         }
 
         // Load Views
-        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'self-deploy');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'self-deploy');
     }
 
     /**
@@ -40,7 +40,7 @@ class SelfDeployServiceProvider extends ServiceProvider
     public function register()
     {
         $this->mergeConfigFrom(
-            __DIR__ . '/../config/self-deploy.php',
+            __DIR__.'/../config/self-deploy.php',
             'self-deploy'
         );
     }

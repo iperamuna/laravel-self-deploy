@@ -123,12 +123,14 @@ The command will guide you through:
 Compile your Blade templates into executable `.sh` scripts in your configured `deployment_scripts_path`.
 
 ```bash
-# Interactive
+# Interactive (Select deployment & optional server)
 php artisan selfdeploy:publish-deployment-scripts
 
-# All deployments in production
+# All deployments in production (Smart Filtering applies)
 php artisan selfdeploy:publish-deployment-scripts --all --environment=production --force
 ```
+
+**Smart Filtering**: If you run with `--all` on a server where `config('app.server_key')` is set, only the script matching that server key will be generated for multi-server deployments.
 
 ### 3. Run Deployments
 

@@ -1,7 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\File;
-
 beforeEach(function () {
     config()->set('self-deploy.environments.production', [
         'hosts' => ['1.2.3.4', '5.6.7.8'],
@@ -9,7 +7,7 @@ beforeEach(function () {
         'remote_path' => '/var/www/app',
         'app-production' => [
             'deploy_path' => '/var/www/app',
-        ]
+        ],
     ]);
 });
 
@@ -49,7 +47,7 @@ it('includes publish flag when requested', function () {
     // We check the output messages which contain the command being run
     $this->artisan('selfdeploy:remote-deploy', [
         'environment' => 'production',
-        '--publish' => true
+        '--publish' => true,
     ])
         ->expectsOutputToContain('--publish')
         ->assertExitCode(0);
