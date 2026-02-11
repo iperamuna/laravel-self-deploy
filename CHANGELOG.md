@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [v1.4.1] - 2026-02-11
+
+### Changed
+- **Predictable Log Naming**: Updated `base.blade.php` to use the deployment name in log files (e.g., `app-production-deployment-YYYY-MM-DD_HHMMSS.log`) instead of the generic `deploy-blue-green-*`.
+- **Improved Logging Feedback**: Updated the deployment started message to include the deployment name for better clarity.
+
 ## [v1.4.0] - 2026-02-11
 
 ### Added

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 LOG_DIR="{{ $log_dir }}"
-LOG_FILE="${LOG_DIR}/deploy-blue-green-$(date +%F_%H%M%S).log"
+LOG_FILE="${LOG_DIR}/{{ $script }}-deployment-$(date +%F_%H%M%S).log"
 # ------------------------
 
 # Log everything (stdout + stderr) to file AND console
@@ -17,7 +17,7 @@ log "RUN: $*"
 "$@"
 }
 
-log "==== Blue/Green deploy started ===="
+log "==== {{ $script }} deployment started ===="
 log "Log file: $LOG_FILE"
 
 @includeif($script)
