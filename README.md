@@ -1,5 +1,9 @@
 # Laravel Self Deploy
 
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/iperamuna/laravel-self-deploy.svg?style=flat-square)](https://packagist.org/packages/iperamuna/laravel-self-deploy)
+[![Total Downloads](https://img.shields.io/packagist/dt/iperamuna/laravel-self-deploy.svg?style=flat-square)](https://packagist.org/packages/iperamuna/laravel-self-deploy)
+[![License](https://img.shields.io/packagist/l/iperamuna/laravel-self-deploy.svg?style=flat-square)](https://packagist.org/packages/iperamuna/laravel-self-deploy)
+
 A simple, opinionated Laravel package for managing self-hosted "Blue/Green" style deployments using Artisan commands and shell scripts. It allows you to define deployment configurations in a config file, generate deployment artifacts (Blade templates -> Shell scripts), and trigger them locally or on a server.
 
 ## Features
