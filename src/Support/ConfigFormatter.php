@@ -23,13 +23,21 @@ class ConfigFormatter
             $output .= $nextIndentStr;
 
             $output .= is_string($key)
-                ? "'".addslashes($key)."' => "
-                : $key.' => ';
+                ? "'" . addslashes($key) . "' => "
+                : $key . ' => ';
 
             if (is_array($value)) {
                 $output .= self::format($value, $indent + 1);
             } elseif (is_string($value)) {
-                $output .= "'".addslashes($value)."'";
+                if ($key === 'log_dir' && $value === storage_path('self-deployments/logs')) {
+                    $output .= "storage_path('self-deployments/logs')";
+                } elseif ($key === 'deployment_configurations_path' && $value === resource_path('deployments')) {
+                    $output .= "resource_path('deployments')";
+                } elseif ($key === 'deployment_scripts_path' && $value === base_path('.deployments')) {
+                    $output .= "base_path('.deployments')";
+                } else {
+                    $output .= "'" . addslashes($value) . "'";
+                }
             } elseif (is_bool($value)) {
                 $output .= $value ? 'true' : 'false';
             } elseif ($value === null) {
@@ -45,7 +53,7 @@ class ConfigFormatter
             }
         }
 
-        $output .= "\n".$indentStr.']';
+        $output .= "\n" . $indentStr . ']';
 
         return $output;
     }

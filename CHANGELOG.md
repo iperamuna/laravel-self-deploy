@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
+## [v1.5.5] - 2026-02-11
+
+### Fixed
+- **Config Path Integrity**: Prevented `ConfigFormatter` from resolving absolute paths for core configuration keys (`log_dir`, `deployment_configurations_path`, `deployment_scripts_path`).
+- **Path Helper Preservation**: Core path configuration keys now correctly preserve their Laravel helper functions (`storage_path`, `resource_path`, `base_path`) when the configuration file is updated via CLI.
 ## [v1.5.4] - 2026-02-11
 
 ### Added
