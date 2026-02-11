@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.1.1] - 2026-02-11
+
+### Fixed
+- **In-Memory Config Update**: Fixed issue where bash script generation would fail when immediately generating scripts after adding new deployment configurations interactively
+- Config is now refreshed in memory after updating the config file, ensuring subsequent commands have access to newly added configurations
+
+### Changed
+- Improved test coverage with new test for in-memory config updates (14 tests, 59 assertions)
+
 ## [v1.1.0] - 2026-02-11
 
 ### Added
