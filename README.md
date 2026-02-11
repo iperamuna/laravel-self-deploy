@@ -181,6 +181,47 @@ To enable Systemd mode:
 ],
 ```
 
+## Multi-Server Orchestration
+
+If you have multiple app servers for a single environment, you can manage them using the `hosts` configuration and the `remote-deploy` command.
+
+### 1. Configure Hosts
+
+Add `hosts`, `ssh_user`, and `remote_path` to your environment configuration in `config/self-deploy.php`:
+
+```php
+'environments' => [
+    'production' => [
+        'hosts' => ['192.168.1.10', '192.168.1.11'],
+        'ssh_user' => 'deploy',
+        'remote_path' => '/var/www/my-app',
+        'app-production' => [
+            'deploy_path' => '/var/www/my-app',
+            // ...
+        ]
+    ]
+]
+```
+
+### 2. Trigger Remote Deployment
+
+Run the `remote-deploy` command from your local machine (or CI/CD server) to reach out to all configured hosts via SSH and trigger their local self-deployments.
+
+```bash
+php artisan selfdeploy:remote-deploy production
+```
+
+This command will:
+1. Connect to each host via SSH as the configured `ssh_user`.
+2. `cd` into the `remote_path`.
+3. Run `php artisan selfdeploy:run --force`.
+
+To automatically regenerate scripts on remote servers before deploying:
+
+```bash
+php artisan selfdeploy:remote-deploy production --publish
+```
+
 ## Roadmap
 
 - [ ] Add support for remote server execution (SSH).

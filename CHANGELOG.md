@@ -1,6 +1,14 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [v1.5.0] - 2026-02-11
+
+### Added
+- **Multi-Server Orchestration**: Added `selfdeploy:remote-deploy` command to trigger deployments across multiple servers via SSH.
+- **Host Configuration**: Added support for `hosts`, `ssh_user`, and `remote_path` in environment configurations.
+- **Remote Script Regeneration**: Added `--publish` flag to the remote deploy command to regenerate scripts on targeted servers before execution.
+- **New Test Suite**: Added `RemoteDeployTest` to verify orchestration logic.
+
 ## [v1.4.2] - 2026-02-11
 
 ### Changed

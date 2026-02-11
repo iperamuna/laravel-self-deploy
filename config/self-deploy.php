@@ -8,7 +8,19 @@ return [
 
     'deployment_scripts_path' => base_path('.deployments'),
 
-    'environments' => [],
+    'environments' => [
+        /*
+        'production' => [
+            'hosts' => ['192.168.1.10', '192.168.1.11'],
+            'ssh_user' => 'deploy',
+            'remote_path' => '/var/www/my-app',
+            'app-production' => [
+                'deploy_path' => '/var/www/my-app',
+                'branch' => 'main',
+            ],
+        ],
+        */
+    ],
 
     /*
     |--------------------------------------------------------------------------
