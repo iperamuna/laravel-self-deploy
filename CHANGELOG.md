@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.6.0] - 2026-02-23
+
+### Added
+- **Live Log Tailing**: Added support for monitoring deployments via `journalctl` in real-time.
+- **Tmux Integration**: Automatically opens a `tmux` session (`plcargo-logs`) with a horizontal split to monitor multiple systemd units simultaneously.
+- **New `--tail` Flag**: Added a dedicated flag to trigger log monitoring without interactive prompts.
+- **Improved UX**: The `run` command now prompts the user to tail logs at the end of a deployment (unless `--force` is used).
+- **Tmux Fallback**: Added a robust fallback that tails journals sequentially if `tmux` is not installed on the system.
+
 ## [v1.5.9] - 2026-02-12
 
 ### Fixed

@@ -142,6 +142,23 @@ Trigger all `.sh` scripts found in your `deployment_scripts_path` directory.
 php artisan selfdeploy:run
 ```
 
+#### Live Log Monitoring
+
+The command now supports live log tailing using `tmux` (horizontal split) or a sequential fallback if `tmux` is not available.
+
+```bash
+# Automated (No confirmation)
+php artisan selfdeploy:run --tail
+
+# Interactive (Prompts at the end)
+php artisan selfdeploy:run
+```
+
+- **--tail**: Automatically opens `tmux` and tails journals for started units.
+- **--force**: Skips the log tailing prompt (finishes after triggering scripts).
+- **Tmux Integration**: If `tmux` is installed, it opens a session named `plcargo-logs` with a horizontal split showing the first two units.
+- **Fallback**: If `tmux` is missing, it tails journals one after another.
+
 To automatically regenerate scripts before running:
 
 ```bash
