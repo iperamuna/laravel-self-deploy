@@ -2,14 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
-## [v1.6.0] - 2026-02-23
+## [v1.7.0] - 2026-03-04
 
 ### Added
-- **Live Log Tailing**: Added support for monitoring deployments via `journalctl` in real-time.
-- **Tmux Integration**: Automatically opens a `tmux` session (`plcargo-logs`) with a horizontal split to monitor multiple systemd units simultaneously.
-- **New `--tail` Flag**: Added a dedicated flag to trigger log monitoring without interactive prompts.
-- **Improved UX**: The `run` command now prompts the user to tail logs at the end of a deployment (unless `--force` is used).
-- **Tmux Fallback**: Added a robust fallback that tails journals sequentially if `tmux` is not installed on the system.
+- **Commit Parameter Support**: `selfdeploy:run` now accepts optional `commit-hash` and `commit-msg` arguments, which are passed to the deployment scripts as `$1` and `$2`.
+- **Unified Deployment Summary**: Deployment scripts now generate a comprehensive summary including duration, status, commit details (detected or passed), and command output.
+- **Improved Logging Architecture**: Refactored `base.blade.php` to use a temporary buffer for logs, allowing for a structured summary at the end of the deployment.
+- **Reporting Extension**: Added `self-deploy::end` Blade view for standard deployment reporting and cleanup.
+- **Session Cleanup**: `selfdeploy:run` now automatically kills existing `plcargo-logs` tmux sessions before starting a new one to prevent duplicates.
+
+### Changed
+- **Tmux Split Direction**: Changed tmux split-window from vertical (`-v`) to horizontal (`-h`) for better visibility when monitoring multiple units.
+- **Log Naming Convention**: Updated log file naming to `deployment-{{ $script }}.log` and placed all logs in the base log directory for easier aggregation.
+- **Shell Mode Command**: Background shell execution now correctly CD's into the work directory before running the script with parameters.
+
+## [v1.6.0] - 2026-02-23
 
 ## [v1.5.9] - 2026-02-12
 

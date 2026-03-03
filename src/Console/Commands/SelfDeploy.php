@@ -9,6 +9,9 @@ use Illuminate\Support\Str;
 class SelfDeploy extends Command
 {
     protected $signature = 'selfdeploy:run
+                            {commit-hash? : Optional Git commit hash to pass to scripts}
+                            {commit-msg? : Optional Git commit message to pass to scripts}
+                            {--script= : Specific script name to run (e.g., deploy.sh)}
                             {--force : Run without confirmation}
                             {--publish : Publish/regenerate deployment scripts before deploying}
                             {--tail : Tail the journals in tmux after deployment without confirmation}';
@@ -30,9 +33,31 @@ class SelfDeploy extends Command
             return Command::FAILURE;
         }
 
-        $scripts = $this->getShellScripts($scriptsPath);
+        if ($specificScript = $this->option('script')) {
+            if (File::isAbsolutePath($specificScript)) {
+                if (File::exists($specificScript)) {
+                    $scripts = collect([new \SplFileInfo($specificScript)]);
+                } else {
+                    $this->error("Specific script path [{$specificScript}] does not exist.");
+
+                    return Command::FAILURE;
+                }
+            } else {
+                $scripts = $this->getShellScripts($scriptsPath);
+                $scripts = $scripts->filter(fn ($file) => $file->getFilename() === $specificScript);
+
+                if ($scripts->isEmpty()) {
+                    $this->error("Specific script [{$specificScript}] not found in {$scriptsPath}");
+
+                    return Command::FAILURE;
+                }
+            }
+        } else {
+            $scripts = $this->getShellScripts($scriptsPath);
+        }
 
         if ($scripts->isEmpty()) {
+
             $this->info("No .sh files found in {$scriptsPath}");
 
             return Command::SUCCESS;
@@ -46,8 +71,11 @@ class SelfDeploy extends Command
             return Command::SUCCESS;
         }
 
+        $commitHash = $this->argument('commit-hash');
+        $commitMsg = $this->argument('commit-msg');
+
         foreach ($scripts as $script) {
-            $this->runScript($script);
+            $this->runScript($script, $commitHash, $commitMsg);
         }
 
         $this->info('All scripts triggered.');
@@ -71,7 +99,10 @@ class SelfDeploy extends Command
         $count = count($units);
 
         if ($this->isTmuxInstalled()) {
-            $this->line('▶ <info>Opening live logs in tmux (horizontal split)...</info>');
+            $this->line('▶ <info>Opening live logs in tmux (vertical split)...</info>');
+
+            // Kill any existing session with the same name to avoid duplicates
+            exec('tmux kill-session -t plcargo-logs 2>/dev/null');
 
             if ($count === 1) {
                 $command = sprintf(
@@ -79,9 +110,9 @@ class SelfDeploy extends Command
                     escapeshellarg($units[0])
                 );
             } else {
-                // Use first two units for the split as requested
+                // Use first two units for the split as requested, using vertical split (-h)
                 $command = sprintf(
-                    'tmux new-session -d -s plcargo-logs "journalctl -u %s -f" \; split-window -v "journalctl -u %s -f" \; attach',
+                    'tmux new-session -d -s plcargo-logs "journalctl -u %s -f" \; split-window -h "journalctl -u %s -f" \; attach',
                     escapeshellarg($units[0]),
                     escapeshellarg($units[1])
                 );
@@ -147,7 +178,7 @@ class SelfDeploy extends Command
             ->values();
     }
 
-    protected function runScript(\SplFileInfo $file): void
+    protected function runScript(\SplFileInfo $file, ?string $commitHash = null, ?string $commitMsg = null): void
     {
         $scriptPath = $file->getRealPath();
         $scriptName = $file->getFilename();
@@ -157,9 +188,9 @@ class SelfDeploy extends Command
         $mode = config('self-deploy.execution_mode', 'shell');
 
         if ($mode === 'systemd') {
-            $this->runViaSystemd($scriptPath, $scriptName);
+            $this->runViaSystemd($scriptPath, $scriptName, $commitHash, $commitMsg);
         } else {
-            $this->runViaShell($scriptPath);
+            $this->runViaShell($scriptPath, $commitHash, $commitMsg);
         }
     }
 
@@ -167,7 +198,7 @@ class SelfDeploy extends Command
      | Execution modes
      |-----------------------------------------------------------------*/
 
-    protected function runViaSystemd(string $scriptPath, string $scriptName): void
+    protected function runViaSystemd(string $scriptPath, string $scriptName, ?string $commitHash = null, ?string $commitMsg = null): void
     {
         $systemd = config('self-deploy.systemd', []);
         $workDir = base_path();
@@ -199,7 +230,20 @@ class SelfDeploy extends Command
             $cmd->push('--collect');
         }
 
-        $cmd->push('/bin/bash -lc '.escapeshellarg($scriptPath));
+        // Prepare the script execution with parameters
+        $execCmd = $scriptPath;
+        if ($commitHash) {
+            $execCmd .= ' '.escapeshellarg($commitHash);
+        }
+        if ($commitMsg) {
+            // If message is provided but hash wasn't, we need a placeholder for $1
+            if (! $commitHash) {
+                $execCmd .= ' ""';
+            }
+            $execCmd .= ' '.escapeshellarg($commitMsg);
+        }
+
+        $cmd->push('/bin/bash -lc '.escapeshellarg($execCmd));
 
         $command = $cmd->implode(' ');
 
@@ -223,14 +267,26 @@ class SelfDeploy extends Command
         }
     }
 
-    protected function runViaShell(string $scriptPath): void
+    protected function runViaShell(string $scriptPath, ?string $commitHash = null, ?string $commitMsg = null): void
     {
         $workDir = base_path();
+
+        // Prepare the script execution with parameters
+        $execCmd = $scriptPath;
+        if ($commitHash) {
+            $execCmd .= ' '.escapeshellarg($commitHash);
+        }
+        if ($commitMsg) {
+            if (! $commitHash) {
+                $execCmd .= ' ""';
+            }
+            $execCmd .= ' '.escapeshellarg($commitMsg);
+        }
 
         $command = sprintf(
             '%s bash -lc %s &',
             app()->runningUnitTests() ? '' : 'sudo',
-            escapeshellarg("sleep 5; cd {$workDir} && {$scriptPath}")
+            escapeshellarg("sleep 5; cd {$workDir} && {$execCmd}")
         );
 
         if (! app()->runningUnitTests()) {

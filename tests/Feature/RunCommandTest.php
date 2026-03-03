@@ -79,3 +79,22 @@ it('triggers systemd mode with specific user when configured', function () {
         ->assertSuccessful()
         ->expectsOutputToContain('Systemd command: sudo /usr/bin/systemd-run');
 });
+
+it('passes commit hash and message arguments when provided', function () {
+    config()->set('self-deploy.execution_mode', 'systemd');
+
+    $scriptsPath = config('self-deploy.deployment_scripts_path');
+    File::put($scriptsPath.'/deploy.sh', 'echo "test"');
+
+    $this->artisan('selfdeploy:run', [
+        'commit-hash' => 'abc1234',
+        'commit-msg' => 'feat: new feature',
+        '--force' => true,
+        '-v' => true,
+    ])
+        ->assertSuccessful()
+        ->expectsOutputToContain('Systemd command:')
+        ->expectsOutputToContain('deploy.sh')
+        ->expectsOutputToContain('abc1234')
+        ->expectsOutputToContain('feat: new feature');
+});

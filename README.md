@@ -139,27 +139,38 @@ sudo php artisan selfdeploy:publish-deployment-scripts --all --environment=produ
 Trigger all `.sh` scripts found in your `deployment_scripts_path` directory.
 
 ```bash
-php artisan selfdeploy:run
-```
-
-#### Live Log Monitoring
-
-The command now supports live log tailing using `tmux` (horizontal split) or a sequential fallback if `tmux` is not available.
-
-```bash
-# Automated (No confirmation)
-php artisan selfdeploy:run --tail
-
-# Interactive (Prompts at the end)
-php artisan selfdeploy:run
-```
-
-- **--tail**: Automatically opens `tmux` and tails journals for started units.
-- **--force**: Skips the log tailing prompt (finishes after triggering scripts).
-- **Tmux Integration**: If `tmux` is installed, it opens a session named `plcargo-logs` with a horizontal split showing the first two units.
-- **Fallback**: If `tmux` is missing, it tails journals one after another.
-
-To automatically regenerate scripts before running:
+Trigger all `.sh` scripts found in your `deployment_scripts_path` directory.
+ 
+-```bash
+-php artisan selfdeploy:run
+-```
++#### Command Parameters
++
++The `run` command now supports passing optional commit details directly to your deployment scripts:
++
++```bash
++php artisan selfdeploy:run {commit-hash?} {commit-msg?}
++```
++
++These are passed as `$1` and `$2` respectively to the generated scripts, allowing you to include external metadata (like a GitHub commit) in your logs.
++
++**Example with commit details**
++
++```bash
++php artisan selfdeploy:run a6bcf12 "feat: add commit support"
++```
+ 
+ #### Live Log Monitoring
+ 
+@@ -156,7 +171,7 @@ php artisan selfdeploy:run
+ 
+ - **--tail**: Automatically opens `tmux` and tails journals for started units.
+ - **--force**: Skips the log tailing prompt (finishes after triggering scripts).
+-- **Tmux Integration**: If `tmux` is installed, it opens a session named `plcargo-logs` with a horizontal split showing the first two units.
++- **Tmux Integration**: If `tmux` is installed, it opens a session named `plcargo-logs` with a **horizontal split** showing the first two unit journals.
+ - **Fallback**: If `tmux` is missing, it tails journals one after another.
+ 
+ To automatically regenerate scripts before running:
 
 ```bash
 php artisan selfdeploy:run --publish

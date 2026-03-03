@@ -8,8 +8,8 @@ set -euo pipefail
 export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
 APP_DIR="{{ $app_path }}"
-LOG_DIR="{{ $log_dir }}/{{ $script }}"
-LOG_FILE="${LOG_DIR}/deployment-$(date +%F_%H%M%S).log"
+LOG_DIR="{{ $log_dir }}"
+LOG_FILE="${LOG_DIR}/deployment-{{ $script }}.log"
 
 # ------------------------
 # Logging setup
@@ -19,7 +19,14 @@ sudo mkdir -p "$LOG_DIR"
 exec > >(sudo tee -a "$LOG_FILE") 2>&1
 
 log() {
-  echo "[$(date '+%F %T')] $*"
+  local level="${1:-INFO}"
+  if [[ "$level" =~ ^(INFO|ERROR|WARNING|DEBUG|NOTICE|CRITICAL|ALERT|EMERGENCY)$ ]]; then
+    shift
+  else
+    level="INFO"
+  fi
+  local message="$*"
+  echo "[$(date '+%F %T')] {{ app()->environment() }}.${level}: ${message}"
 }
 
 log_cmd() {
@@ -36,8 +43,10 @@ run() {
 # Start deploy
 # ------------------------
 
-log "==== laravel-app deployment started ===="
-log "Log file: $LOG_FILE"
+START_TIME=$(date '+%F %T')
+log "==== Deployment: {{ $script }} ===="
+log "Started at: ${START_TIME}"
+log "Log file:   ${LOG_FILE}"
 
 cd "$APP_DIR"
 
