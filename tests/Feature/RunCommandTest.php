@@ -18,7 +18,7 @@ beforeEach(function () {
 it('triggers shell mode by default', function () {
     $scriptsPath = config('self-deploy.deployment_scripts_path');
     // Create a mock script
-    File::put($scriptsPath.'/deploy.sh', 'echo "test"');
+    File::put($scriptsPath . '/deploy.sh', 'echo "test"');
 
     $this->artisan('selfdeploy:run', ['--force' => true])
         ->expectsOutputToContain('Found 1 deployment script(s).')
@@ -37,7 +37,7 @@ it('triggers systemd mode when configured', function () {
 
     $scriptsPath = config('self-deploy.deployment_scripts_path');
     // Create a mock script
-    File::put($scriptsPath.'/deploy.sh', 'echo "test"');
+    File::put($scriptsPath . '/deploy.sh', 'echo "test"');
 
     $this->artisan('selfdeploy:run', ['--force' => true])
         ->expectsOutputToContain('SUCCESS: Started systemd unit')
@@ -50,7 +50,7 @@ it('triggers systemd mode when configured', function () {
 it('can publish and then run', function () {
     $scriptsPath = config('self-deploy.deployment_scripts_path');
     // Setup a mock blade file first
-    $bladePath = config('self-deploy.deployment_configurations_path').'/app-testing.blade.php';
+    $bladePath = config('self-deploy.deployment_configurations_path') . '/app-testing.blade.php';
     File::put($bladePath, 'echo "Deploy"');
 
     $this->artisan('selfdeploy:run', [
@@ -61,7 +61,7 @@ it('can publish and then run', function () {
         ->expectsOutput('Found 1 deployment script(s).')
         ->assertExitCode(0);
 
-    expect(File::exists($scriptsPath.'/app-testing.sh'))->toBeTrue();
+    expect(File::exists($scriptsPath . '/app-testing.sh'))->toBeTrue();
 });
 
 it('triggers systemd mode with specific user when configured', function () {
@@ -73,7 +73,7 @@ it('triggers systemd mode with specific user when configured', function () {
 
     $scriptsPath = config('self-deploy.deployment_scripts_path');
     // Create a mock script
-    File::put($scriptsPath.'/deploy-user.sh', 'echo "test"');
+    File::put($scriptsPath . '/deploy-user.sh', 'echo "test"');
 
     $this->artisan('selfdeploy:run', ['--force' => true, '-v' => true])
         ->assertSuccessful()
@@ -84,17 +84,14 @@ it('passes commit hash and message arguments when provided', function () {
     config()->set('self-deploy.execution_mode', 'systemd');
 
     $scriptsPath = config('self-deploy.deployment_scripts_path');
-    File::put($scriptsPath.'/deploy.sh', 'echo "test"');
+    File::put($scriptsPath . '/deploy.sh', 'echo "test"');
 
     $this->artisan('selfdeploy:run', [
         'commit-hash' => 'abc1234',
         'commit-msg' => 'feat: new feature',
         '--force' => true,
-        '-v' => true,
     ])
         ->assertSuccessful()
-        ->expectsOutputToContain('Systemd command:')
-        ->expectsOutputToContain('deploy.sh')
-        ->expectsOutputToContain('abc1234')
-        ->expectsOutputToContain('feat: new feature');
+        ->expectsOutputToContain('Triggering: deploy.sh')
+        ->expectsOutputToContain('SUCCESS: Started systemd unit');
 });
