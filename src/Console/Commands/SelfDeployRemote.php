@@ -13,6 +13,8 @@ class SelfDeployRemote extends Command
      */
     protected $signature = 'selfdeploy:remote-deploy
                             {environment? : The environment to deploy to (e.g. production)}
+                            {commit-hash? : Optional Git commit hash to pass to remote servers}
+                            {commit-msg? : Optional Git commit message to pass to remote servers}
                             {--publish : Automatically publish/regenerate scripts on remote servers before deploying}';
 
     /**
@@ -20,7 +22,7 @@ class SelfDeployRemote extends Command
      *
      * @var string
      */
-    protected $description = 'Trigger self-deployment on multiple remote servers via SSH';
+    protected $description = 'Trigger self-deployment on multiple remote servers via SSH, optionally passing commit metadata';
 
     /**
      * Execute the console command.
@@ -64,8 +66,28 @@ class SelfDeployRemote extends Command
 
         $this->info("Starting remote deployment for [{$environment}] across ".count($hosts).' host(s).');
 
+        $commitHash = $this->argument('commit-hash');
+        $commitMsg = $this->argument('commit-msg');
+
         $publishFlag = $this->option('publish') ? ' --publish' : '';
-        $remoteCommand = "cd {$remotePath} && php artisan selfdeploy:run --force{$publishFlag}";
+
+        // Build the call for the remote artisan command
+        $remoteCallParts = ['php artisan selfdeploy:run'];
+
+        if ($commitHash) {
+            $remoteCallParts[] = escapeshellarg($commitHash);
+        }
+
+        if ($commitMsg) {
+            if (! $commitHash) {
+                $remoteCallParts[] = '""';
+            }
+            $remoteCallParts[] = escapeshellarg($commitMsg);
+        }
+
+        $remoteCallParts[] = "--force{$publishFlag}";
+
+        $remoteCommand = "cd {$remotePath} && ".implode(' ', $remoteCallParts);
 
         $hasErrors = false;
 

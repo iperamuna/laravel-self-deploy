@@ -23,13 +23,13 @@ class SelfDeploy extends Command
 
     public function handle(): int
     {
-        if ($this->option('publish') && !$this->publishScripts()) {
+        if ($this->option('publish') && ! $this->publishScripts()) {
             return Command::FAILURE;
         }
 
         $scriptsPath = config('self-deploy.deployment_scripts_path');
 
-        if (!$this->validateScriptsPath($scriptsPath)) {
+        if (! $this->validateScriptsPath($scriptsPath)) {
             return Command::FAILURE;
         }
 
@@ -44,7 +44,7 @@ class SelfDeploy extends Command
                 }
             } else {
                 $scripts = $this->getShellScripts($scriptsPath);
-                $scripts = $scripts->filter(fn($file) => $file->getFilename() === $specificScript);
+                $scripts = $scripts->filter(fn ($file) => $file->getFilename() === $specificScript);
 
                 if ($scripts->isEmpty()) {
                     $this->error("Specific script [{$specificScript}] not found in {$scriptsPath}");
@@ -63,9 +63,9 @@ class SelfDeploy extends Command
             return Command::SUCCESS;
         }
 
-        $this->info('Found ' . $scripts->count() . ' deployment script(s).');
+        $this->info('Found '.$scripts->count().' deployment script(s).');
 
-        if (!$this->option('force') && !$this->confirm('Do you wish to run all these deployment scripts?')) {
+        if (! $this->option('force') && ! $this->confirm('Do you wish to run all these deployment scripts?')) {
             $this->info('Operation cancelled.');
 
             return Command::SUCCESS;
@@ -80,10 +80,10 @@ class SelfDeploy extends Command
 
         $this->info('All scripts triggered.');
 
-        if (!empty($this->startedUnits) && !app()->runningUnitTests()) {
+        if (! empty($this->startedUnits) && ! app()->runningUnitTests()) {
             if ($this->option('tail')) {
                 $this->tailJournals();
-            } elseif (!$this->option('force')) {
+            } elseif (! $this->option('force')) {
                 if ($this->confirm('Do you want to tail journals in tmux?', true)) {
                     $this->tailJournals();
                 }
@@ -162,7 +162,7 @@ class SelfDeploy extends Command
 
     protected function validateScriptsPath(?string $path): bool
     {
-        if (!$path || !File::exists($path)) {
+        if (! $path || ! File::exists($path)) {
             $this->error("Deployment scripts path not configured or does not exist: {$path}");
 
             return false;
@@ -174,7 +174,7 @@ class SelfDeploy extends Command
     protected function getShellScripts(string $path)
     {
         return collect(File::files($path))
-            ->filter(fn($file) => $file->getExtension() === 'sh')
+            ->filter(fn ($file) => $file->getExtension() === 'sh')
             ->values();
     }
 
@@ -206,24 +206,24 @@ class SelfDeploy extends Command
         $unitName = Str::of(pathinfo($scriptName, PATHINFO_FILENAME))
             ->slug()
             ->limit(30, '')
-            ->append('-' . now()->format('Ymd-His'));
+            ->append('-'.now()->format('Ymd-His'));
 
         $cmd = collect([
             'sudo',
             '/usr/bin/systemd-run',
             "--unit={$unitName}",
-            '--property=Nice=' . ($systemd['nice'] ?? 10),
-            '--property=IOSchedulingClass=' . ($systemd['io_scheduling_class'] ?? 'best-effort'),
-            '--property=IOSchedulingPriority=' . ($systemd['io_scheduling_priority'] ?? 7),
-            '--property=WorkingDirectory=' . escapeshellarg($workDir),
+            '--property=Nice='.($systemd['nice'] ?? 10),
+            '--property=IOSchedulingClass='.($systemd['io_scheduling_class'] ?? 'best-effort'),
+            '--property=IOSchedulingPriority='.($systemd['io_scheduling_priority'] ?? 7),
+            '--property=WorkingDirectory='.escapeshellarg($workDir),
         ]);
 
-        if (!empty($systemd['user'])) {
+        if (! empty($systemd['user'])) {
             $cmd->push("--property=User={$systemd['user']}");
         }
 
         foreach ($systemd['env'] ?? [] as $key => $value) {
-            $cmd->push('--property=Environment=' . escapeshellarg("{$key}={$value}"));
+            $cmd->push('--property=Environment='.escapeshellarg("{$key}={$value}"));
         }
 
         if (($systemd['collect'] ?? true) === true) {
@@ -233,17 +233,17 @@ class SelfDeploy extends Command
         // Prepare the script execution with parameters
         $execCmd = $scriptPath;
         if ($commitHash) {
-            $execCmd .= ' ' . escapeshellarg($commitHash);
+            $execCmd .= ' '.escapeshellarg($commitHash);
         }
         if ($commitMsg) {
             // If message is provided but hash wasn't, we need a placeholder for $1
-            if (!$commitHash) {
+            if (! $commitHash) {
                 $execCmd .= ' ""';
             }
-            $execCmd .= ' ' . escapeshellarg($commitMsg);
+            $execCmd .= ' '.escapeshellarg($commitMsg);
         }
 
-        $cmd->push('/bin/bash -lc ' . escapeshellarg($execCmd));
+        $cmd->push('/bin/bash -lc '.escapeshellarg($execCmd));
 
         $command = $cmd->implode(' ');
 
@@ -274,13 +274,13 @@ class SelfDeploy extends Command
         // Prepare the script execution with parameters
         $execCmd = $scriptPath;
         if ($commitHash) {
-            $execCmd .= ' ' . escapeshellarg($commitHash);
+            $execCmd .= ' '.escapeshellarg($commitHash);
         }
         if ($commitMsg) {
-            if (!$commitHash) {
+            if (! $commitHash) {
                 $execCmd .= ' ""';
             }
-            $execCmd .= ' ' . escapeshellarg($commitMsg);
+            $execCmd .= ' '.escapeshellarg($commitMsg);
         }
 
         $command = sprintf(
@@ -289,7 +289,7 @@ class SelfDeploy extends Command
             escapeshellarg("sleep 5; cd {$workDir} && {$execCmd}")
         );
 
-        if (!app()->runningUnitTests()) {
+        if (! app()->runningUnitTests()) {
             exec($command);
         }
 
