@@ -4,6 +4,8 @@ return [
 
     'log_dir' => storage_path('self-deployments/logs'),
 
+    'timezone' => env('SELF_DEPLOY_LOG_TIMEZONE', config('app.timezone', 'UTC')),
+
     'deployment_configurations_path' => resource_path('deployments'),
 
     'deployment_scripts_path' => base_path('.deployments'),

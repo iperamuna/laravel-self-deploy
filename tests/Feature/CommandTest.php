@@ -510,3 +510,19 @@ it('can re-configure (edit) an existing deployment configuration', function () {
     $content = File::get("{$configPath}/app-production.blade.php");
     expect($content)->toContain('{{ $new_key }}');
 });
+
+it('respects the configured timezone for log timestamps', function () {
+    config()->set('self-deploy.timezone', 'America/New_York');
+
+    $this->artisan('selfdeploy:create-deployment-file')
+        ->expectsQuestion('Select Environment or Add New', '+ Add New Environment')
+        ->expectsQuestion('Enter new environment name', 'new-env')
+        ->expectsQuestion('Select Deployment Configuration or Add New', '+ Add New Deployment Configuration')
+        ->expectsQuestion('Enter deployment configuration name', 'timezone-test')
+        ->expectsConfirmation('Does this deployment have multiple app servers?', 'no')
+        ->expectsQuestion('Config Key', 'd')
+        ->expectsConfirmation('Do you want to generate the Bash script now?', 'no')
+        ->assertExitCode(0);
+
+    expect(config('self-deploy.timezone'))->toBe('America/New_York');
+});

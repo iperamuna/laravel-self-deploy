@@ -14,6 +14,7 @@ A simple, opinionated Laravel package for managing self-hosted "Blue/Green" styl
 - **Deployment Trigger**: Run all generated deployment scripts in the background via a single Artisan command.
 - **Systemd Supervision**: Supports running deployments as transient systemd units for better process isolation, automatic cleanup, and live monitoring.
 - **Resource Management**: Configure CPU Niceness and IO scheduling to prevent deployments from impacting web server performance.
+- **Timezone Awareness**: Configure specific timezones for deployment logs to match your local application time.
 - **Blue/Green Ready**: The default template is set up for a Blue/Green deployment strategy using Systemd and Nginx upstream switching.
 - **Pretty Configuration**: Automatically formats your `config/self-deploy.php` with double-newline spacing formatted as a standard PHP array.
 

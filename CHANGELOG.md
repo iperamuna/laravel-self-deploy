@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.7.5] - 2026-03-04
+
+### Added
+- **Log Timezone Configuration**: Added `timezone` configuration to `config/self-deploy.php` to control the timestamp display in deployment log summaries. This ensures logs match the local application timezone even if the server system time is set to UTC.
+- **Improved Reporting**: Updated the `end.blade.php` template to explicitly use the `TZ` environment variable when generating log timestamps.
+
 ## [v1.7.4] - 2026-03-04
 
 ### Added
