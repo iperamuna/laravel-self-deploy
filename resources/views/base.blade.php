@@ -57,6 +57,7 @@ fi
 # Trap to report status on exit
 cleanup() {
 @include('self-deploy::end')
+
 }
 trap cleanup EXIT
 

@@ -2,8 +2,10 @@
 # End deploy (Cleanup & Reporting)
 # ------------------------
 
-# 1. Restore original stdout/stderr (re-open terminal pipe)
-exec 1>&3 2>&4
+# 1. Restore original stdout/stderr (re-open terminal pipe) if they were saved
+[ -e /dev/fd/3 ] && exec 1>&3 3>&- 2>/dev/null || true
+[ -e /dev/fd/4 ] && exec 2>&4 4>&- 2>/dev/null || true
+
 
 # 2. Timing calculation
 END_TIMESTAMP=$(date +%s)

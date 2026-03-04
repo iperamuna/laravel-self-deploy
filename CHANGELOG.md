@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.7.1] - 2026-03-04
+
+### Fixed
+- **Shell Script Syntax**: Added a newline before the closing brace in the `cleanup()` function in `base.blade.php` to prevent syntax errors when including `end.blade.php`.
+- **Robust Output Restoration**: Improved file descriptor handling in `end.blade.php` to safely restore stdout and stderr only if they were successfully backed up, preventing "Bad file descriptor" warnings.
+
 ## [v1.7.0] - 2026-03-04
 
 ### Added
