@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.7.3] - 2026-03-04
+
+### Added
+- **Single Script Testing**: Added comprehensive feature tests for running single deployment scripts using the `--script` flag, covering both relative names and absolute paths.
+
+### Fixed
+- **Absolute Path Detection**: Replaced the non-existent `File::isAbsolutePath` call with a cross-platform implementation in the `selfdeploy:run` command.
+- **Code Style**: Synchronized code style across the package using Laravel Pint.
+
 ## [v1.7.2] - 2026-03-04
 
 ### Fixed

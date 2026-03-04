@@ -34,7 +34,7 @@ class SelfDeploy extends Command
         }
 
         if ($specificScript = $this->option('script')) {
-            if (File::isAbsolutePath($specificScript)) {
+            if (Str::startsWith($specificScript, DIRECTORY_SEPARATOR) || (PHP_OS_FAMILY === 'Windows' && preg_match('/^[a-zA-Z]:\\\\/', $specificScript))) {
                 if (File::exists($specificScript)) {
                     $scripts = collect([new \SplFileInfo($specificScript)]);
                 } else {
@@ -81,7 +81,7 @@ class SelfDeploy extends Command
         $this->info('All scripts triggered.');
 
         if (! empty($this->startedUnits) && ! app()->runningUnitTests()) {
-            if ($this->option('tail')) {
+            if ($this->option('tail') && ! $this->option('force')) {
                 $this->tailJournals();
             } elseif (! $this->option('force')) {
                 if ($this->confirm('Do you want to tail journals in tmux?', true)) {

@@ -95,3 +95,32 @@ it('passes commit hash and message arguments when provided', function () {
         ->expectsOutputToContain('Triggering: deploy.sh')
         ->expectsOutputToContain('SUCCESS: Started systemd unit');
 });
+
+it('can run a single specific script by name', function () {
+    $scriptsPath = config('self-deploy.deployment_scripts_path');
+    File::put($scriptsPath.'/script1.sh', 'echo "1"');
+    File::put($scriptsPath.'/script2.sh', 'echo "2"');
+
+    $this->artisan('selfdeploy:run', [
+        '--script' => 'script1.sh',
+        '--force' => true,
+    ])
+        ->expectsOutputToContain('Found 1 deployment script(s).')
+        ->expectsOutputToContain('Triggering: script1.sh')
+        ->assertExitCode(0);
+});
+
+it('can run a single specific script by absolute path', function () {
+    $tempScript = tempnam(sys_get_temp_dir(), 'deploy').'.sh';
+    File::put($tempScript, 'echo "absolute"');
+
+    $this->artisan('selfdeploy:run', [
+        '--script' => $tempScript,
+        '--force' => true,
+    ])
+        ->expectsOutputToContain('Found 1 deployment script(s).')
+        ->expectsOutputToContain('Triggering: '.basename($tempScript))
+        ->assertExitCode(0);
+
+    unlink($tempScript);
+});
