@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.7.2] - 2026-03-04
+
+### Fixed
+- **Clean Logging**: Automatically strip ANSI escape sequences (colors) from the deployment logs in `end.blade.php` to ensure readability in plain-text log viewers.
+
 ## [v1.7.1] - 2026-03-04
 
 ### Fixed

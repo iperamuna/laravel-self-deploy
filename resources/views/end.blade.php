@@ -47,8 +47,9 @@ echo "#2 Commit Hash: ${FINAL_HASH}" | sudo tee -a "$LOG_FILE" > /dev/null
 echo "#3 Commit Message: ${FINAL_MSG}" | sudo tee -a "$LOG_FILE" > /dev/null
 
 # 6. Append buffered command output from TEMP_LOG (numbered sequentially)
+# We strip ANSI color codes to keep logs clean
 if [ -f "$TEMP_LOG" ]; then
-awk '{print "#" (NR+3) " " $0}' "$TEMP_LOG" | sudo tee -a "$LOG_FILE" > /dev/null
+awk '{print "#" (NR+3) " " $0}' "$TEMP_LOG" | sed 's/\x1b\[[0-9;]*[mGKH]//g' | sudo tee -a "$LOG_FILE" > /dev/null
 rm -f "$TEMP_LOG"
 fi
 
