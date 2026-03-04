@@ -38,8 +38,7 @@ FINAL_MSG="${COMMIT_INPUT_MSG:-$(git log -1 --pretty=%B 2>/dev/null | head -n 1 
 
 # 5. Write the final unified log entry
 SUMMARY_HEADER="==== Deployment Summary: {{ $script }} (${STATUS}) within ${HUMAN_DURATION} ===="
-echo "[$(TZ='{{ config('self-deploy.timezone', 'UTC') }}' date '+%F %T')] {{ app()->environment() }}.${LEVEL}:
-${SUMMARY_HEADER}" | sudo tee -a "$LOG_FILE" > /dev/null
+echo "[$(TZ='{{ config('self-deploy.timezone', 'UTC') }}' date '+%F %T')] {{ app()->environment() }}.${LEVEL}: ${SUMMARY_HEADER}" | sudo tee -a "$LOG_FILE" > /dev/null
 
 # Context metadata lines
 echo "#0 Status: ${STATUS}" | sudo tee -a "$LOG_FILE" > /dev/null
@@ -58,4 +57,3 @@ fi
 TOTAL_LINES=$(sudo wc -l < "$LOG_FILE" 2>/dev/null || echo "0")
     echo "#${TOTAL_LINES} {main}" | sudo tee -a "$LOG_FILE" > /dev/null
     echo "#$((TOTAL_LINES+1)) ==== Deployment Summary: {{ $script }} ====" | sudo tee -a "$LOG_FILE" > /dev/null
-    printf "\n" | sudo tee -a "$LOG_FILE" > /dev/null
