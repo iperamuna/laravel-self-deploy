@@ -482,3 +482,31 @@ it('fails when using restricted key names', function () {
         ->expectsOutput('Deployment name cannot be [self_deploy_server_key].')
         ->assertExitCode(1);
 });
+it('can re-configure (edit) an existing deployment configuration', function () {
+    // Create the blade file first to trigger overwrite prompt later
+    $configPath = config('self-deploy.deployment_configurations_path');
+    File::ensureDirectoryExists($configPath);
+    File::put("{$configPath}/app-production.blade.php", 'old content');
+
+    $this->artisan('selfdeploy:create-deployment-file')
+        ->expectsChoice('Select Environment or Add New', 'production', ['production', '+ Add New Environment'])
+        ->expectsChoice('Select Deployment Configuration or Add New', 'app-production', ['app-production', 'app-frontend', '+ Add New Deployment Configuration'])
+        ->expectsOutput('Existing configuration found for [app-production].')
+        ->expectsConfirmation('Do you want to re-configure the server/config keys?', 'yes')
+        ->expectsConfirmation('Does this deployment have multiple app servers?', 'no')
+        ->expectsQuestion('Config Key', 'new_key')
+        ->expectsQuestion('Default value for [new_key]', 'new_value')
+        ->expectsQuestion('Config Key', 'd')
+        ->expectsConfirmation('Do you want to overwrite it? All existing content will be lost.', 'yes')
+        ->expectsConfirmation('Do you want to generate the Bash script now?', 'no')
+        ->assertExitCode(0);
+
+    $configs = config('self-deploy.environments.production.app-production');
+    expect($configs)->toHaveKey('new_key');
+    expect($configs['new_key'])->toBe('new_value');
+    expect($configs)->not()->toHaveKey('deploy_path'); // Old config should be replaced
+
+    $configPath = config('self-deploy.deployment_configurations_path');
+    $content = File::get("{$configPath}/app-production.blade.php");
+    expect($content)->toContain('{{ $new_key }}');
+});

@@ -2,7 +2,7 @@
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/iperamuna/laravel-self-deploy.svg?style=flat-square)](https://packagist.org/packages/iperamuna/laravel-self-deploy)
 [![Total Downloads](https://img.shields.io/packagist/dt/iperamuna/laravel-self-deploy.svg?style=flat-square)](https://packagist.org/packages/iperamuna/laravel-self-deploy)
-[![License](https://img.shields.io/packagist/l/iperamuna/laravel-self-deploy.svg?style=flat-square)](https://packagist.org/packages/iperamuna/laravel-self-deploy)
+[![License](https://img.shields.io/packagist/l/iperamuna/laravel-self-deploy.svg?style=flat-square)](https://img.shields.io/packagist/l/iperamuna/laravel-self-deploy)
 
 A simple, opinionated Laravel package for managing self-hosted "Blue/Green" style deployments using Artisan commands and shell scripts. It allows you to define deployment configurations in a config file, generate deployment artifacts (Blade templates -> Shell scripts), and trigger them locally or on a server.
 
@@ -138,39 +138,43 @@ sudo php artisan selfdeploy:publish-deployment-scripts --all --environment=produ
 
 Trigger all `.sh` scripts found in your `deployment_scripts_path` directory.
 
+#### Command Parameters
+
+The `run` command supports triggering all scripts or a single specific script:
+
 ```bash
-Trigger all `.sh` scripts found in your `deployment_scripts_path` directory.
- 
--```bash
--php artisan selfdeploy:run
--```
-+#### Command Parameters
-+
-+The `run` command now supports passing optional commit details directly to your deployment scripts:
-+
-+```bash
-+php artisan selfdeploy:run {commit-hash?} {commit-msg?}
-+```
-+
-+These are passed as `$1` and `$2` respectively to the generated scripts, allowing you to include external metadata (like a GitHub commit) in your logs.
-+
-+**Example with commit details**
-+
-+```bash
-+php artisan selfdeploy:run a6bcf12 "feat: add commit support"
-+```
- 
- #### Live Log Monitoring
- 
-@@ -156,7 +171,7 @@ php artisan selfdeploy:run
- 
- - **--tail**: Automatically opens `tmux` and tails journals for started units.
- - **--force**: Skips the log tailing prompt (finishes after triggering scripts).
--- **Tmux Integration**: If `tmux` is installed, it opens a session named `plcargo-logs` with a horizontal split showing the first two units.
-+- **Tmux Integration**: If `tmux` is installed, it opens a session named `plcargo-logs` with a **horizontal split** showing the first two unit journals.
- - **Fallback**: If `tmux` is missing, it tails journals one after another.
- 
- To automatically regenerate scripts before running:
+# Run ALL generated scripts (default)
+php artisan selfdeploy:run
+
+# Run only a SINGLE script by name (relative to .deployments)
+php artisan selfdeploy:run --script=app-production
+
+# Run only a SINGLE script by absolute path
+php artisan selfdeploy:run --script=/home/user/my-custom-script.sh
+```
+
+Additionally, you can pass optional commit details directly to your deployment scripts:
+
+```bash
+php artisan selfdeploy:run {commit-hash?} {commit-msg?}
+```
+
+These are passed as `$1` and `$2` respectively to the generated scripts, allowing you to include external metadata (like a GitHub commit) in your logs.
+
+**Example with commit details**
+
+```bash
+php artisan selfdeploy:run a6bcf12 "feat: add commit support"
+```
+
+#### Live Log Monitoring
+
+- **--tail**: Automatically opens `tmux` and tails journals for started units.
+- **--force**: Skips the log tailing prompt (finishes after triggering scripts).
+- **Tmux Integration**: If `tmux` is installed, it opens a session named `plcargo-logs` with a **horizontal split** showing binary-safe unit journals.
+- **Fallback**: If `tmux` is missing, it tails journals one after another.
+
+To automatically regenerate scripts before running:
 
 ```bash
 php artisan selfdeploy:run --publish

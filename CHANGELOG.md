@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.7.4] - 2026-03-04
+
+### Added
+- **Configuration Editing Tests**: Added feature tests for the re-configuration (editing) flow in the `selfdeploy:create-deployment-file` command, ensuring existing deployments can be updated interactively.
+- **Documentation**: Updated README with more details and examples for single script execution using the `--script` flag.
+
 ## [v1.7.3] - 2026-03-04
 
 ### Added
