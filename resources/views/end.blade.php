@@ -58,3 +58,4 @@ fi
 TOTAL_LINES=$(sudo wc -l < "$LOG_FILE" 2>/dev/null || echo "0")
     echo "#${TOTAL_LINES} {main}" | sudo tee -a "$LOG_FILE" > /dev/null
     echo "#$((TOTAL_LINES+1)) ==== Deployment Summary: {{ $script }} ====" | sudo tee -a "$LOG_FILE" > /dev/null
+    printf "\n" | sudo tee -a "$LOG_FILE" > /dev/null

@@ -2,11 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.7.6] - 2026-03-04
+
+### Added
+- **Log Viewer Compatibility**: Refactored log formatting in `end.blade.php` to ensure single-line headers and trailing newlines, specifically optimized for Laravel Log Viewer packages.
+- **Smart Directory Handling**: Introduced `TARGET_DIR` in `base.blade.php`, allowing deployments to start directly in a configured `deploy_path` without first changing to the Laravel root. This resolves issues where frontend deployments would fail if they didn't share the same root as the backend.
+
+### Fixed
+- **Timezone-Aware Logs**: Unified timezone support across all templates (`base.blade.php`, `end.blade.php`, and `bash-base.stub`) to ensure consistent timestamps regardless of server system time.
+- **Robustness**: Ensured all `cd` commands in deployment scripts are guarded by directory existence checks.
+
 ## [v1.7.5] - 2026-03-04
 
 ### Added
 - **Log Timezone Configuration**: Added `timezone` configuration to `config/self-deploy.php` to control the timestamp display in deployment log summaries. This ensures logs match the local application timezone even if the server system time is set to UTC.
-- **Improved Reporting**: Updated the `end.blade.php` template to explicitly use the `TZ` environment variable when generating log timestamps.
+- **Improved Reporting**: Updated the `base.blade.php` and `end.blade.php` templates to explicitly use the configured timezone for deployment timestamps.
 
 ## [v1.7.4] - 2026-03-04
 

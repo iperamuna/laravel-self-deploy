@@ -17,6 +17,7 @@ A simple, opinionated Laravel package for managing self-hosted "Blue/Green" styl
 - **Timezone Awareness**: Configure specific timezones for deployment logs to match your local application time.
 - **Blue/Green Ready**: The default template is set up for a Blue/Green deployment strategy using Systemd and Nginx upstream switching.
 - **Pretty Configuration**: Automatically formats your `config/self-deploy.php` with double-newline spacing formatted as a standard PHP array.
+- **Log Viewer Ready**: Optimized single-line log headers and trailing newlines for seamless integration with Laravel Log Viewer packages.
 
 ## Installation
 

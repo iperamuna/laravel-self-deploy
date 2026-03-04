@@ -8,6 +8,7 @@ set -euo pipefail
 export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
 APP_DIR="{{ $app_path }}"
+TARGET_DIR="{{ $deploy_path ?? $app_path }}"
 LOG_DIR="{{ $log_dir }}"
 LOG_FILE="${LOG_DIR}/deployment-{{ $script }}.log"
 
@@ -61,6 +62,14 @@ cleanup() {
 }
 trap cleanup EXIT
 
-cd "$APP_DIR"
+
+START_TIME=$(TZ='{{ config('self-deploy.timezone', 'UTC') }}' date '+%F %T')
+log "==== Deployment: {{ $script }} ===="
+log "Started at: ${START_TIME}"
+
+# Ensure TARGET_DIR exists before changing into it
+if [ -d "$TARGET_DIR" ]; then
+cd "$TARGET_DIR"
+fi
 
 @includeif($script)
