@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.7.7] - 2026-03-04
+
+### Fixed
+- **Log Formatting**: Joined the deployment summary log header into a single line in `end.blade.php` to improve compatibility with log parsers and ensure clean one-line log entries.
+
 ## [v1.7.6] - 2026-03-04
 
 ### Added
