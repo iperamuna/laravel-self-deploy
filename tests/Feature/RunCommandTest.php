@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\File;
 
 beforeEach(function () {
@@ -32,7 +33,7 @@ it('triggers systemd mode when configured', function () {
 
     // Freeze time for deterministic assertions
     $now = now();
-    Illuminate\Support\Carbon::setTestNow($now);
+    Carbon::setTestNow($now);
     $timestamp = $now->format('Ymd-His');
 
     $scriptsPath = config('self-deploy.deployment_scripts_path');
@@ -44,7 +45,7 @@ it('triggers systemd mode when configured', function () {
         ->expectsOutputToContain('Monitor: journalctl -u')
         ->assertExitCode(0);
 
-    Illuminate\Support\Carbon::setTestNow();
+    Carbon::setTestNow();
 });
 
 it('can publish and then run', function () {

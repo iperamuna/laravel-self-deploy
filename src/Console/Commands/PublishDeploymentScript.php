@@ -33,7 +33,7 @@ class PublishDeploymentScript extends Command
      */
     public function handle()
     {
-        if (! app()->runningUnitTests() && posix_getuid() !== 0) {
+        if (! app()->environment() === 'local' && app()->runningUnitTests() && posix_getuid() !== 0) {
             $this->error('This command must be run with sudo.');
 
             return Command::FAILURE;

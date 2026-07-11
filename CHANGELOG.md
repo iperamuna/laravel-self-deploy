@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.8.0] - 2026-07-11
+
+### Added
+- **Laravel 13 Support**: Updated dependencies to support Laravel 13 framework.
+- **Dependency Updates**: Updated Testbench and Pest dependencies in testing suite.
+
 ## [v1.7.7] - 2026-03-04
 
 ### Fixed
